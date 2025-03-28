@@ -170,6 +170,10 @@ Building toward a future where "project collections" can be dynamically defined 
 
 Dazzlelink is part of [Dazzle's](https://github.com/djdarcy/dazzle) OmniTools suite of Python utilities designed to provide consistent functionality across all operating systems, simplifying system administration and file management tasks.
 
+### 🌐 Relinker Ecosystem Integration
+
+Dazzlelink metadata serves as a foundational building block of the larger Relinker ecosystem—a decentralized, content-aware archival and link-resolution system designed to combat digital link rot and enable intelligent, persistent content linking. The protocol aims to better manage complex link graph relations, metadata similarity, and provide resilient content preservation. For a detailed exploration of the broader vision and its future roadmap, visit the [Relinker Project Overview](https://github.com/djdarcy/dazzlelink/blob/main/docs/RELINKER.md).
+
 ## Contributing
 
 Contributions are welcome! Issues, suggestions, and bug reports are all appreciated. Please open an [issue](https://github.com/djdarcy/dazzlelink/issues) if you find something that can be improved. Or: 
