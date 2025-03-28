@@ -13,14 +13,14 @@ A clear and concise description of the feature you'd like to see implemented.
 Describe how things work now and how they would work with this feature.
 
 **Use Case**
-Explain the scenarios where this feature would be useful (e.g., specific subreddits, post types, or workflow improvements).
+Explain the scenarios where this feature would be useful (e.g., specific filesystem types, graph structures, or workflow improvements).
 
 **Implementation Suggestions**
 If you have ideas about how this could be implemented, share them here.
 
 **Which Version(s)**
 - [ ] CLI Version
-- [ ] Installed Package Version
+- [ ] Package Version
 - [ ] Both
 
 **Additional context**

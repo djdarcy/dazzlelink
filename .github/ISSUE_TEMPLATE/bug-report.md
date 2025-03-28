@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help improve Reddit to Slack Integration
+about: Create a report to help improve Dazzlelink
 title: "[BUG] "
 labels: bug
 assignees: ''

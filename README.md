@@ -10,7 +10,7 @@ Dazzlelink is a cross-platform tool that exports, imports, and manages symbolic 
 
 - **Export and Import**: Save symbolic links to portable `.dazzlelink` files and recreate them on any system
 - **Cross-Platform Support**: Seamlessly handle symlinks between Windows, Linux, macOS, and BSD
-- **UNC Path Handling**: Intelligently convert between UNC paths (`\\server\share`) and drive letters
+- **UNC Path Handling**: Intelligently convert between UNC paths (`\\server\share`) and subst'ed drive letters
 - **Timestamp Preservation**: Maintain creation, modification, and access times when recreating symlinks
 - **Batch Operations**: Process entire directories of symlinks with a single command
 - **Flexible Configuration**: Global, directory, and file-level configuration options
@@ -62,8 +62,9 @@ pip install -e .
 # Export a single symlink to a .dazzlelink file
 dazzlelink export path/to/symlink
 
-# Export all symlinks in a directory
-dazzlelink scan --recursive /path/to/directory
+# Export all symlinks in a directory to .dazzlelink files, that open using the default handler,
+# and remove the original symlink
+dazzlelink.py convert --remove-originals --mode open --config-level file .
 ```
 
 ### Import a symbolic link
@@ -155,7 +156,7 @@ Dazzlelink began as a tool for preserving symbolic links across platforms, but i
 
 ### 🔍 Content Relationship Discovery
 
-Future versions aim to integrate with content similarity tools (like the companion tool "find-best-images") to identify and map relationships between files based on content similarity rather than just explicit links.
+Future versions aim to integrate with content similarity tools (like the companion tool "[find-best-images](https://github.com/djdarcy/find-best-images)") to identify and map relationships between files based on content similarity rather than just explicit links.
 
 ### 📊 File System Visualization
 
@@ -167,11 +168,11 @@ Building toward a future where "project collections" can be dynamically defined 
 
 ### 🔄 OmniTools Integration
 
-Dazzlelink is part of a planned OmniTools suite of Python utilities designed to provide consistent functionality across all operating systems, simplifying system administration and file management tasks.
+Dazzlelink is part of [Dazzle's](https://github.com/djdarcy/dazzle) OmniTools suite of Python utilities designed to provide consistent functionality across all operating systems, simplifying system administration and file management tasks.
 
 ## Contributing
 
-Contributions are welcome! Issues, suggestions, and bug reports are all appreciated. Please open an [issue](https://github.com/djdarcy/listall/issues) if you find something that can be improved. Or: 
+Contributions are welcome! Issues, suggestions, and bug reports are all appreciated. Please open an [issue](https://github.com/djdarcy/dazzlelink/issues) if you find something that can be improved. Or: 
 
 1. Fork this repository and clone a fork.
 2. Make changes on a new branch (e.g., `feature/new_thing`).
