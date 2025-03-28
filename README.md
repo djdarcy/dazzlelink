@@ -171,7 +171,7 @@ Dazzlelink is part of a planned OmniTools suite of Python utilities designed to 
 
 ## Contributing
 
-Contributions are welcome! Issues, suggestions, and bug reports are all appreciated. Please open an [issue](https://github.com/djdarcy/listall/issues) if you find something that can be improved. Or: 
+Contributions are welcome! Issues, suggestions, and bug reports are all appreciated. Please open an [issue](https://github.com/djdarcy/dazzlelink/issues) if you find something that can be improved. Or: 
 
 1. Fork this repository and clone a fork.
 2. Make changes on a new branch (e.g., `feature/new_thing`).
