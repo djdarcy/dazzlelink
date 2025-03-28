@@ -4,7 +4,7 @@
 
 Dazzlelink is a cross-platform tool that exports, imports, and manages symbolic links, with a particular focus on handling network paths and preserving links across different systems. It solves the common challenge of maintaining and backing-up symbolic links when moving between Windows, Linux, macOS, and BSD environments.
 
-![Dazzlelink logo placeholder](images/dazzlelink-logo.png)
+![Dazzlelink example workflow](examples/workflow.png)
 
 ## Features
 

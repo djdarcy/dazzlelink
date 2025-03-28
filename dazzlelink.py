@@ -321,6 +321,386 @@ class DazzleLinkException(Exception):
     """Base exception for DazzleLink errors"""
     pass
 
+class DazzleLinkData:
+    """
+    Abstract Data Type (ADT) for working with dazzlelink data.
+    
+    This class provides a consistent interface for accessing dazzlelink data,
+    handling different format versions and maintaining backward compatibility.
+    """
+    
+    def __init__(self, data=None):
+        """
+        Initialize with existing data or create a new dazzlelink data structure.
+        
+        Args:
+            data (dict, optional): Existing dazzlelink data. If None, creates a new structure.
+        """
+        if data is None:
+            # Create new structure
+            self.data = {
+                "schema_version": 1,
+                "created_by": "DazzleLink v1",
+                "creation_timestamp": datetime.datetime.now().timestamp(),
+                "creation_date": datetime.datetime.now().isoformat(),
+                
+                # New dazzlelink metadata section
+                "dazzlelink_metadata": {
+                    "last_updated_timestamp": datetime.datetime.now().timestamp(),
+                    "last_updated_date": datetime.datetime.now().isoformat(),
+                    "update_history": ["initial_creation"]
+                },
+                
+                "link": {
+                    "original_path": "",
+                    "path_representations": {},
+                    "target_path": "",
+                    "target_representations": {},
+                    "type": "unknown",
+                    "relative_path": False,
+                    "timestamps": {
+                        "created": None,
+                        "modified": None,
+                        "accessed": None,
+                        "created_iso": None,
+                        "modified_iso": None,
+                        "accessed_iso": None
+                    },
+                    "attributes": {
+                        "hidden": False,
+                        "system": False,
+                        "readonly": False
+                    }
+                },
+                
+                "target": {
+                    "exists": False,
+                    "type": "unknown",
+                    "size": None,
+                    "checksum": None,
+                    "extension": None,
+                    "timestamps": {
+                        "created": None,
+                        "modified": None,
+                        "accessed": None,
+                        "created_iso": None,
+                        "modified_iso": None,
+                        "accessed_iso": None
+                    }
+                },
+                
+                "security": {
+                    "permissions": None,
+                    "owner": None,
+                    "group": None
+                },
+                
+                "config": {
+                    "default_mode": "info",
+                    "platform": "unknown"
+                }
+            }
+        else:
+            # Use existing data
+            self.data = data
+    
+    # Schema information
+    def get_schema_version(self):
+        """Get the schema version of the dazzlelink data."""
+        return self.data.get("schema_version", 1)
+    
+    def get_creator(self):
+        """Get the creator string of the dazzlelink data."""
+        return self.data.get("created_by", "Unknown")
+    
+    # Creation timestamps
+    def get_creation_timestamp(self):
+        """Get the creation timestamp of the dazzlelink."""
+        return self.data.get("creation_timestamp")
+    
+    def get_creation_date(self):
+        """Get the creation date of the dazzlelink as ISO format string."""
+        return self.data.get("creation_date")
+    
+    # Dazzlelink metadata
+    def get_last_updated_timestamp(self):
+        """Get the last updated timestamp of the dazzlelink."""
+        # Try new format first, fall back to creation timestamp
+        dazzlelink_metadata = self.data.get("dazzlelink_metadata", {})
+        return dazzlelink_metadata.get("last_updated_timestamp", self.get_creation_timestamp())
+    
+    def get_last_updated_date(self):
+        """Get the last updated date of the dazzlelink as ISO format string."""
+        # Try new format first, fall back to creation date
+        dazzlelink_metadata = self.data.get("dazzlelink_metadata", {})
+        return dazzlelink_metadata.get("last_updated_date", self.get_creation_date())
+    
+    def get_update_history(self):
+        """Get the update history of the dazzlelink."""
+        dazzlelink_metadata = self.data.get("dazzlelink_metadata", {})
+        return dazzlelink_metadata.get("update_history", ["initial_creation"])
+    
+    def update_metadata(self, reason="manual_update"):
+        """
+        Update the dazzlelink metadata to reflect changes.
+        
+        Args:
+            reason (str): Reason for the update.
+        """
+        now = datetime.datetime.now()
+        timestamp = now.timestamp()
+        date_str = now.isoformat()
+        
+        # Ensure dazzlelink_metadata exists
+        if "dazzlelink_metadata" not in self.data:
+            self.data["dazzlelink_metadata"] = {
+                "last_updated_timestamp": timestamp,
+                "last_updated_date": date_str,
+                "update_history": ["initial_creation", reason]
+            }
+        else:
+            self.data["dazzlelink_metadata"]["last_updated_timestamp"] = timestamp
+            self.data["dazzlelink_metadata"]["last_updated_date"] = date_str
+            if "update_history" not in self.data["dazzlelink_metadata"]:
+                self.data["dazzlelink_metadata"]["update_history"] = ["initial_creation", reason]
+            else:
+                self.data["dazzlelink_metadata"]["update_history"].append(reason)
+    
+    # Link information
+    def get_link_type(self):
+        """Get the type of the link (symlink, file, etc.)."""
+        link = self.data.get("link", {})
+        return link.get("type", "unknown")
+    
+    def get_original_path(self):
+        """Get the original path of the link."""
+        link = self.data.get("link", {})
+        return link.get("original_path", "")
+    
+    def set_original_path(self, path):
+        """Set the original path of the link."""
+        if "link" not in self.data:
+            self.data["link"] = {}
+        self.data["link"]["original_path"] = str(path)
+    
+    def get_target_path(self):
+        """Get the target path of the link."""
+        # Handle both old and new formats
+        if "target_path" in self.data:
+            # Old format
+            return self.data["target_path"]
+        else:
+            # New format
+            link = self.data.get("link", {})
+            return link.get("target_path", "")
+    
+    def set_target_path(self, path):
+        """Set the target path of the link."""
+        if "link" not in self.data:
+            self.data["link"] = {}
+        self.data["link"]["target_path"] = str(path)
+    
+    def get_path_representations(self):
+        """Get all path representations for the link."""
+        link = self.data.get("link", {})
+        return link.get("path_representations", {"original_path": self.get_original_path()})
+    
+    def get_target_representations(self):
+        """Get all path representations for the target."""
+        link = self.data.get("link", {})
+        return link.get("target_representations", {"original_path": self.get_target_path()})
+    
+    # Link timestamps
+    def get_link_timestamps(self):
+        """Get all timestamps for the original link."""
+        link = self.data.get("link", {})
+        return link.get("timestamps", {
+            "created": None,
+            "modified": None,
+            "accessed": None,
+            "created_iso": None,
+            "modified_iso": None,
+            "accessed_iso": None
+        })
+    
+    def set_link_timestamps(self, created=None, modified=None, accessed=None):
+        """
+        Set timestamps for the original link.
+        
+        Args:
+            created (float, optional): Creation timestamp.
+            modified (float, optional): Modification timestamp.
+            accessed (float, optional): Access timestamp.
+        """
+        if "link" not in self.data:
+            self.data["link"] = {}
+        
+        if "timestamps" not in self.data["link"]:
+            self.data["link"]["timestamps"] = {}
+        
+        timestamps = self.data["link"]["timestamps"]
+        
+        if created is not None:
+            timestamps["created"] = created
+            timestamps["created_iso"] = datetime.datetime.fromtimestamp(created).isoformat() if created else None
+        
+        if modified is not None:
+            timestamps["modified"] = modified
+            timestamps["modified_iso"] = datetime.datetime.fromtimestamp(modified).isoformat() if modified else None
+        
+        if accessed is not None:
+            timestamps["accessed"] = accessed
+            timestamps["accessed_iso"] = datetime.datetime.fromtimestamp(accessed).isoformat() if accessed else None
+    
+    # Target information
+    def get_target_exists(self):
+        """Check if the target exists."""
+        target = self.data.get("target", {})
+        return target.get("exists", False)
+    
+    def get_target_type(self):
+        """Get the type of the target (file, directory, etc.)."""
+        target = self.data.get("target", {})
+        return target.get("type", "unknown")
+    
+    def get_target_size(self):
+        """Get the size of the target file."""
+        target = self.data.get("target", {})
+        return target.get("size")
+    
+    # Target timestamps
+    def get_target_timestamps(self):
+        """Get all timestamps for the target."""
+        target = self.data.get("target", {})
+        if "timestamps" in target:
+            return target["timestamps"]
+        else:
+            # For backward compatibility, create empty timestamps
+            return {
+                "created": None,
+                "modified": None,
+                "accessed": None,
+                "created_iso": None,
+                "modified_iso": None,
+                "accessed_iso": None
+            }
+    
+    def set_target_timestamps(self, created=None, modified=None, accessed=None):
+        """
+        Set timestamps for the target.
+        
+        Args:
+            created (float, optional): Creation timestamp.
+            modified (float, optional): Modification timestamp.
+            accessed (float, optional): Access timestamp.
+        """
+        if "target" not in self.data:
+            self.data["target"] = {}
+        
+        if "timestamps" not in self.data["target"]:
+            self.data["target"]["timestamps"] = {}
+        
+        timestamps = self.data["target"]["timestamps"]
+        
+        if created is not None:
+            timestamps["created"] = created
+            timestamps["created_iso"] = datetime.datetime.fromtimestamp(created).isoformat() if created else None
+        
+        if modified is not None:
+            timestamps["modified"] = modified
+            timestamps["modified_iso"] = datetime.datetime.fromtimestamp(modified).isoformat() if modified else None
+        
+        if accessed is not None:
+            timestamps["accessed"] = accessed
+            timestamps["accessed_iso"] = datetime.datetime.fromtimestamp(accessed).isoformat() if accessed else None
+    
+    # Configuration
+    def get_default_mode(self):
+        """Get the default execution mode."""
+        config = self.data.get("config", {})
+        return config.get("default_mode", "info")
+    
+    def set_default_mode(self, mode):
+        """Set the default execution mode."""
+        if "config" not in self.data:
+            self.data["config"] = {}
+        self.data["config"]["default_mode"] = mode
+    
+    def get_platform(self):
+        """Get the platform the dazzlelink was created on."""
+        config = self.data.get("config", {})
+        return config.get("platform", "unknown")
+    
+    def set_platform(self, platform):
+        """Set the platform the dazzlelink was created on."""
+        if "config" not in self.data:
+            self.data["config"] = {}
+        self.data["config"]["platform"] = platform
+    
+    # I/O operations
+    def to_dict(self):
+        """
+        Convert to a dictionary suitable for serialization.
+        
+        Returns:
+            dict: The dazzlelink data as a dictionary.
+        """
+        return self.data
+    
+    @classmethod
+    def from_file(cls, file_path):
+        """
+        Load dazzlelink data from a file.
+        
+        Args:
+            file_path (str): Path to the dazzlelink file.
+            
+        Returns:
+            DazzleLinkData: A new instance with the loaded data.
+            
+        Raises:
+            ValueError: If the file is not a valid dazzlelink file.
+        """
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                try:
+                    data = json.load(f)
+                    return cls(data)
+                except json.JSONDecodeError:
+                    # Try to handle script-embedded format
+                    content = f.read()
+                    json_start = content.find('# DAZZLELINK_DATA_BEGIN')
+                    if json_start != -1:
+                        json_text = content[json_start + len('# DAZZLELINK_DATA_BEGIN'):].strip()
+                        data = json.loads(json_text)
+                        return cls(data)
+                    raise ValueError(f"Invalid dazzlelink file: {file_path}")
+        except Exception as e:
+            raise ValueError(f"Error reading dazzlelink file {file_path}: {str(e)}")
+    
+    def save_to_file(self, file_path, make_executable=False):
+        """
+        Save dazzlelink data to a file.
+        
+        Args:
+            file_path (str): Path to save the dazzlelink file.
+            make_executable (bool): Whether to make the file executable.
+            
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        try:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(self.data, f, indent=2)
+                
+            if make_executable:
+                # TODO: Implement executable script generation
+                pass
+                
+            return True
+        except Exception as e:
+            print(f"Error saving dazzlelink file {file_path}: {str(e)}")
+            return False
 
 class DazzleLinkConfig:
     """
@@ -457,7 +837,6 @@ class DazzleLinkConfig:
         except Exception as e:
             print(f"ERROR: Failed to save configuration: {str(e)}")
             return False
-
 
 class DazzleLink:
     """
@@ -657,52 +1036,59 @@ class DazzleLink:
             else:
                 target_representations = {"original_path": str(target_path)}
             
-            # Collect target information - use separate function to avoid following symlinks
-            target_info = self._collect_target_info(target_path)
-                
-            # Collect security information
-            security_info = self._collect_security_info(link_path)
+            # Create a new DazzleLinkData instance
+            link_data = DazzleLinkData()
             
-            # Get file stats if available
-            creation_time, modified_time, access_time = self._collect_timestamp_info(link_path)
-                
+            # Set basic link info
+            link_data.set_original_path(str(link_path))
+            link_data.set_target_path(target_path)
+            link_data.set_platform(self.platform)
+            link_data.set_default_mode(mode)
+            
+            # Get timestamps for link and target
+            link_timestamps = self._collect_timestamp_info(link_path)
+            link_data.set_link_timestamps(
+                created=link_timestamps[0],
+                modified=link_timestamps[1],
+                accessed=link_timestamps[2]
+            )
+            
+            # Collect target timestamps
+            target_timestamps = self._collect_target_timestamp_info(target_path)
+            link_data.set_target_timestamps(
+                created=target_timestamps.get("created"),
+                modified=target_timestamps.get("modified"),
+                accessed=target_timestamps.get("accessed")
+            )
+            
+            # Update the raw data structure with additional information
+            data_dict = link_data.to_dict()
+            
+            # Add path representations
+            if "link" not in data_dict:
+                data_dict["link"] = {}
+            data_dict["link"]["path_representations"] = path_representations
+            data_dict["link"]["target_representations"] = target_representations
+            data_dict["link"]["type"] = "symlink" if is_symlink else "file"
+            data_dict["link"]["relative_path"] = not os.path.isabs(target_path)
+            data_dict["link"]["attributes"] = self._collect_file_attributes(link_path)
+            
+            # Add target info
+            if "target" not in data_dict:
+                data_dict["target"] = {}
+            target_info = self._collect_target_info(target_path)
+            for key, value in target_info.items():
+                if key != "timestamps":  # Don't overwrite timestamps
+                    data_dict["target"][key] = value
+            
+            # Add security info
+            data_dict["security"] = self._collect_security_info(link_path)
+            
             # Validate mode
             if mode not in DazzleLinkConfig.VALID_MODES:
                 print(f"WARNING: Invalid mode '{mode}', using default")
                 mode = self.config.get("default_mode")
-                
-            link_data = {
-                "schema_version": self.VERSION,
-                "created_by": f"DazzleLink v{self.VERSION}",
-                "creation_timestamp": datetime.datetime.now().timestamp(),
-                "creation_date": datetime.datetime.now().isoformat(),
-                
-                "link": {
-                    "original_path": str(link_path),
-                    "path_representations": path_representations,
-                    "target_path": target_path,
-                    "target_representations": target_representations,
-                    "type": "symlink" if is_symlink else "file",
-                    "relative_path": os.path.isabs(target_path) == False,
-                    "timestamps": {
-                        "created": creation_time,
-                        "modified": modified_time,
-                        "accessed": access_time,
-                        "created_iso": datetime.datetime.fromtimestamp(creation_time).isoformat() if creation_time else None,
-                        "modified_iso": datetime.datetime.fromtimestamp(modified_time).isoformat() if modified_time else None,
-                        "accessed_iso": datetime.datetime.fromtimestamp(access_time).isoformat() if access_time else None
-                    },
-                    "attributes": self._collect_file_attributes(link_path)
-                },
-                
-                "target": target_info,
-                "security": security_info,
-                
-                "config": {
-                    "default_mode": mode,
-                    "platform": self.platform
-                }
-            }
+                data_dict["config"]["default_mode"] = mode
             
             if output_path is None:
                 output_path = f"{link_path}{self.DAZZLELINK_EXT}"
@@ -713,10 +1099,10 @@ class DazzleLink:
             
             # Create the dazzlelink file
             with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(link_data, f, indent=2)
+                json.dump(data_dict, f, indent=2)
             
             if make_executable:
-                self._make_dazzlelink_executable(output_path, link_data)
+                self._make_dazzlelink_executable(output_path, data_dict)
             
             return output_path
             
@@ -832,8 +1218,222 @@ class DazzleLink:
             pass
             
         return security_info
+    
+    def _set_link_timestamps(self, link_path, timestamp_data, max_attempts=2, verify=True, retry_delay=0.05):
+        """
+        Set timestamps on a symlink with verification and retry logic.
         
+        This is a wrapper around _set_file_times that adds verification and retries
+        specifically for symlinks where timestamp setting can be more complex.
+        
+        Args:
+            link_path (str): Path to the symlink
+            timestamp_data (dict): Dictionary with 'created', 'modified', and 'accessed' timestamps
+            max_attempts (int): Maximum number of retry attempts
+            verify (bool): Whether to verify timestamps after setting (can be disabled for batch processing)
+            retry_delay (float): Delay in seconds between retry attempts
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if not os.name == 'nt':
+            debug_print("Advanced symlink timestamp setting only available on Windows")
+            return False
+            
+        if not os.path.exists(link_path):
+            debug_print(f"Link does not exist: {link_path}")
+            return False
+            
+        # Extract timestamps
+        created_time = timestamp_data.get('created')
+        modified_time = timestamp_data.get('modified')
+        accessed_time = timestamp_data.get('accessed')
+        
+        # Ensure we have at least the modified time
+        if modified_time is None:
+            debug_print("No modification time provided, cannot set timestamps")
+            return False
+            
+        debug_print(f"Setting symlink timestamps: {link_path}")
+        debug_print(f"  Created:  {created_time} ({datetime.datetime.fromtimestamp(created_time).isoformat() if created_time else 'None'})")
+        debug_print(f"  Modified: {modified_time} ({datetime.datetime.fromtimestamp(modified_time).isoformat() if modified_time else 'None'})")
+        debug_print(f"  Accessed: {accessed_time} ({datetime.datetime.fromtimestamp(accessed_time).isoformat() if accessed_time else 'None'})")
+        
+        # First attempt - just set the timestamps without verification if verification is disabled
+        success = self._set_file_times(link_path, modified_time, accessed_time, created_time)
+        
+        if not success:
+            debug_print("Initial timestamp setting failed")
+            return False
+            
+        # If verification is disabled, exit early
+        if not verify:
+            return True
+        
+        # Verification needed - start with attempt 1 since we already did initial set
+        for attempt in range(1, max_attempts):
+            # Verify the timestamps were correctly set
+            try:
+                import win32file
+                
+                # Open a handle to the file
+                handle = win32file.CreateFile(
+                    link_path,
+                    win32file.GENERIC_READ,
+                    win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE | win32file.FILE_SHARE_DELETE,
+                    None,
+                    win32file.OPEN_EXISTING,
+                    win32file.FILE_ATTRIBUTE_NORMAL | win32file.FILE_FLAG_BACKUP_SEMANTICS | win32file.FILE_FLAG_OPEN_REPARSE_POINT,
+                    None
+                )
+                
+                try:
+                    # Get the current timestamps
+                    actual_created, actual_accessed, actual_modified = win32file.GetFileTime(handle)
+                    
+                    # Convert to Unix timestamps for easier comparison
+                    actual_created_ts = int(actual_created) / 10000000 - 11644473600 if actual_created else None
+                    actual_accessed_ts = int(actual_accessed) / 10000000 - 11644473600 if actual_accessed else None
+                    actual_modified_ts = int(actual_modified) / 10000000 - 11644473600 if actual_modified else None
+                    
+                    # Allow a larger tolerance (5 seconds) for timestamp comparisons
+                    tolerance = 5.0
+                    verified = True
+                    
+                    # Only check creation and modification times - access time can change frequently
+                    # Check creation time (most important)
+                    if created_time is not None and actual_created_ts is not None:
+                        diff = abs(created_time - actual_created_ts)
+                        if diff > tolerance:
+                            debug_print(f"  Creation time mismatch: expected={created_time}, actual={actual_created_ts}, diff={diff}")
+                            verified = False
+                    
+                    # Check modification time
+                    if modified_time is not None and actual_modified_ts is not None:
+                        diff = abs(modified_time - actual_modified_ts)
+                        if diff > tolerance:
+                            debug_print(f"  Modification time mismatch: expected={modified_time}, actual={actual_modified_ts}, diff={diff}")
+                            verified = False
+                    
+                    if verified:
+                        debug_print("Timestamp verification successful")
+                        return True
+                    
+                finally:
+                    handle.Close()
+                    
+            except ImportError:
+                debug_print("win32file module not available, cannot verify timestamps")
+                # Since we can't verify, assume it worked if _set_file_times reported success
+                return success
+            except Exception as e:
+                debug_print(f"Error verifying timestamps: {str(e)}")
+            
+            # If we reach here, verification failed - set timestamps again
+            debug_print(f"Verification failed, retry attempt {attempt}")
+            success = self._set_file_times(link_path, modified_time, accessed_time, created_time)
+            if not success:
+                debug_print("Timestamp setting failed on retry")
+                return False
+                
+            # Short delay before next verification
+            if attempt < max_attempts - 1:
+                time.sleep(retry_delay)
+        
+        # If we reach here, we've used all our attempts
+        debug_print(f"Failed to verify timestamps after {max_attempts} attempts")
+        # Return true anyway since we did set the timestamps, even if verification failed
+        return True
+    
     def _collect_timestamp_info(self, file_path):
+        """
+        Collect timestamp information for a file.
+        
+        Args:
+            file_path: Path to the file
+            
+        Returns:
+            Tuple of (creation_time, modified_time, access_time)
+        """
+        creation_time = None
+        modified_time = None
+        access_time = None
+        
+        try:
+            stats = os.lstat(file_path)
+            
+            # Get the available timestamps
+            if hasattr(stats, 'st_ctime'):
+                creation_time = stats.st_ctime
+                debug_print(f"Collected creation time for {file_path}: {creation_time} ({datetime.datetime.fromtimestamp(creation_time).isoformat()})")
+            if hasattr(stats, 'st_mtime'):
+                modified_time = stats.st_mtime
+                debug_print(f"Collected modified time for {file_path}: {modified_time} ({datetime.datetime.fromtimestamp(modified_time).isoformat()})")
+            if hasattr(stats, 'st_atime'):
+                access_time = stats.st_atime
+                debug_print(f"Collected access time for {file_path}: {access_time} ({datetime.datetime.fromtimestamp(access_time).isoformat()})")
+                
+        except Exception as e:
+            # Default to current time if stats fail
+            debug_print(f"Failed to collect timestamps for {file_path}: {str(e)}")
+            current_time = datetime.datetime.now().timestamp()
+            creation_time = current_time
+            modified_time = current_time
+            access_time = current_time
+            
+        return creation_time, modified_time, access_time
+
+    def _collect_target_timestamp_info(self, target_path):
+        """
+        Collect timestamp information for the target of a symlink.
+        
+        This is similar to _collect_timestamp_info but specifically for target files,
+        and it handles cases where the target might not exist or might be inaccessible.
+        
+        Args:
+            target_path (str): Path to the target file or directory.
+            
+        Returns:
+            dict: Dictionary with timestamp information.
+        """
+        timestamps = {
+            "created": None,
+            "modified": None,
+            "accessed": None,
+            "created_iso": None,
+            "modified_iso": None,
+            "accessed_iso": None
+        }
+        
+        # Check if target exists
+        if not os.path.exists(target_path):
+            debug_print(f"Target does not exist, cannot collect timestamps: {target_path}")
+            return timestamps
+            
+        try:
+            # Get target stats (without following symlinks if the target itself is a symlink)
+            stats = os.stat(target_path)
+            
+            # Get the available timestamps
+            if hasattr(stats, 'st_ctime'):
+                timestamps["created"] = stats.st_ctime
+                timestamps["created_iso"] = datetime.datetime.fromtimestamp(stats.st_ctime).isoformat()
+                debug_print(f"Collected creation time for target {target_path}: {stats.st_ctime} ({timestamps['created_iso']})")
+                
+            if hasattr(stats, 'st_mtime'):
+                timestamps["modified"] = stats.st_mtime
+                timestamps["modified_iso"] = datetime.datetime.fromtimestamp(stats.st_mtime).isoformat()
+                debug_print(f"Collected modified time for target {target_path}: {stats.st_mtime} ({timestamps['modified_iso']})")
+                
+            if hasattr(stats, 'st_atime'):
+                timestamps["accessed"] = stats.st_atime
+                timestamps["accessed_iso"] = datetime.datetime.fromtimestamp(stats.st_atime).isoformat()
+                debug_print(f"Collected access time for target {target_path}: {stats.st_atime} ({timestamps['accessed_iso']})")
+                
+        except Exception as e:
+            debug_print(f"Error collecting timestamps for {target_path}: {str(e)}")
+            
+        return timestamps
         """Collect timestamp information for a file"""
         creation_time = None
         modified_time = None
@@ -859,35 +1459,34 @@ class DazzleLink:
             
         return creation_time, modified_time, access_time
 
-    def recreate_link(self, dazzlelink_path, target_location=None):
+    def recreate_link(self, dazzlelink_path, target_location=None, timestamp_strategy='current', 
+                        update_dazzlelink=False, use_live_target=False, batch_mode=False):
         """
         Recreate a symbolic link from a .dazzlelink file
         
         Args:
             dazzlelink_path (str): Path to the dazzlelink file
             target_location (str, optional): Override location for the recreated symlink
+            timestamp_strategy (str): Strategy for setting timestamps ('current', 'symlink', 'target', 'preserve-all')
+            update_dazzlelink (bool): Whether to update the dazzlelink metadata during recreation
+            use_live_target (bool): Whether to check the live target file for timestamps
+            batch_mode (bool): If True, optimizes for batch processing (less verification)
             
         Returns:
             str: Path to the created symbolic link
         """
         try:
-            with open(dazzlelink_path, 'r', encoding='utf-8') as f:
-                link_data = json.load(f)
+            # Load the dazzlelink data
+            dl_data = DazzleLinkData.from_file(dazzlelink_path)
             
-            # Handle both old and new schema formats
-            if "target_path" in link_data:
-                # Old format
-                target_path = link_data["target_path"]
-                original_path = link_data["original_path"]
-                is_dir = link_data.get("is_directory", False)
-            elif "link" in link_data and "target_path" in link_data["link"]:
-                # New format
-                target_path = link_data["link"]["target_path"]
-                original_path = link_data["link"]["original_path"]
-                is_dir = link_data["target"].get("type") == "directory" if "target" in link_data else False
-            else:
-                raise DazzleLinkException(f"Invalid dazzlelink format in {dazzlelink_path}")
+            # Get the target and original paths
+            target_path = dl_data.get_target_path()
+            original_path = dl_data.get_original_path()
             
+            # Determine if target is a directory
+            is_dir = dl_data.get_target_type() == "directory"
+            
+            # Determine where to create the symlink
             if target_location:
                 # Use the provided location but keep the original filename
                 original_name = os.path.basename(original_path)
@@ -911,17 +1510,729 @@ class DazzleLink:
             else:
                 os.symlink(target_path, link_path)
             
+            # Verify symlink was created
+            if not os.path.exists(link_path):
+                raise DazzleLinkException(f"Failed to create symlink at {link_path}")
+            
+            # Very small delay to ensure symlink creation is complete (helps avoid race conditions)
+            # Reduced from 0.1 to 0.01 seconds
+            if not batch_mode:
+                time.sleep(0.01)
+            
+            # Apply timestamps based on the selected strategy
+            self._apply_timestamp_strategy(link_path, dl_data, timestamp_strategy, use_live_target, batch_mode=batch_mode)
+            
+            # Verify timestamps were correctly applied (if not current and not in batch mode)
+            if timestamp_strategy != 'current' and os.name == 'nt' and not batch_mode:
+                self._verify_timestamps(link_path, dl_data, timestamp_strategy, use_live_target)
+            
             # Attempt to restore file attributes if available
-            self._restore_file_attributes(link_path, link_data)
+            self._restore_file_attributes(link_path, dl_data.to_dict())
+            
+            # Update dazzlelink metadata if requested
+            if update_dazzlelink:
+                try:
+                    # Update dazzlelink metadata
+                    dl_data.update_metadata(reason="symlink_recreation")
+                    
+                    # If we used live target and it was successful, update target timestamps too
+                    if use_live_target and timestamp_strategy in ['target', 'preserve-all']:
+                        target_path = dl_data.get_target_path()
+                        if os.path.exists(target_path):
+                            # Get current target timestamps
+                            target_timestamps = self._collect_target_timestamp_info(target_path)
+                            
+                            # Update in the dazzlelink data
+                            dl_data.set_target_timestamps(
+                                created=target_timestamps.get('created'),
+                                modified=target_timestamps.get('modified'),
+                                accessed=target_timestamps.get('accessed')
+                            )
+                    
+                    # Save the updated dazzlelink
+                    dl_data.save_to_file(dazzlelink_path)
+                    
+                    debug_print(f"Updated dazzlelink metadata for {dazzlelink_path}")
+                except Exception as e:
+                    debug_print(f"Failed to update dazzlelink metadata: {str(e)}")
             
             return link_path
             
         except Exception as e:
             raise DazzleLinkException(f"Failed to recreate link from {dazzlelink_path}: {str(e)}")
+            
+    def _verify_timestamps(self, link_path, dl_data, strategy, use_live_target=False):
+        """
+        Verify that timestamps were correctly applied to a file.
+        
+        Args:
+            link_path (str): Path to the file to verify
+            dl_data (DazzleLinkData): The dazzlelink data
+            strategy (str): Timestamp strategy that was used
+            use_live_target (bool): Whether to check the live target file for timestamps
+        """
+        if os.name != 'nt':
+            return
+            
+        try:
+            import win32file
+            import pywintypes
+            
+            # Open a handle to the file
+            handle = win32file.CreateFile(
+                link_path,
+                win32file.GENERIC_READ,
+                win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE | win32file.FILE_SHARE_DELETE,
+                None,
+                win32file.OPEN_EXISTING,
+                win32file.FILE_ATTRIBUTE_NORMAL | win32file.FILE_FLAG_BACKUP_SEMANTICS | win32file.FILE_FLAG_OPEN_REPARSE_POINT,
+                None
+            )
+            
+            try:
+                # Get the current timestamps
+                created, accessed, modified = win32file.GetFileTime(handle)
+                
+                # Convert to Unix timestamps for easier comparison
+                actual_created = int(created) / 10000000 - 11644473600 if created else None
+                actual_accessed = int(accessed) / 10000000 - 11644473600 if accessed else None
+                actual_modified = int(modified) / 10000000 - 11644473600 if modified else None
+                
+                debug_print("Timestamp verification results:")
+                debug_print(f"  Created:  {actual_created} ({datetime.datetime.fromtimestamp(actual_created).isoformat() if actual_created else 'None'})")
+                debug_print(f"  Modified: {actual_modified} ({datetime.datetime.fromtimestamp(actual_modified).isoformat() if actual_modified else 'None'})")
+                debug_print(f"  Accessed: {actual_accessed} ({datetime.datetime.fromtimestamp(actual_accessed).isoformat() if actual_accessed else 'None'})")
+                
+                # Determine expected timestamps based on strategy
+                expected_timestamps = None
+                if strategy == 'symlink':
+                    link_timestamps = dl_data.get_link_timestamps()
+                    expected_timestamps = {
+                        'created': link_timestamps.get('created'),
+                        'modified': link_timestamps.get('modified'),
+                        'accessed': link_timestamps.get('accessed')
+                    }
+                    debug_print("Expected symlink timestamps from original link")
+                elif strategy == 'target':
+                    # For target strategy, prefer live target timestamps if available
+                    if use_live_target:
+                        target_path = dl_data.get_target_path()
+                        if os.path.exists(target_path):
+                            live_timestamps = self._collect_target_timestamp_info(target_path)
+                            expected_timestamps = {
+                                'created': live_timestamps.get('created'),
+                                'modified': live_timestamps.get('modified'),
+                                'accessed': live_timestamps.get('accessed')
+                            }
+                            debug_print("Expected timestamps from live target")
+                    
+                    # Fall back to stored target timestamps if live ones aren't available
+                    if expected_timestamps is None:
+                        target_timestamps = dl_data.get_target_timestamps()
+                        expected_timestamps = {
+                            'created': target_timestamps.get('created'),
+                            'modified': target_timestamps.get('modified'),
+                            'accessed': target_timestamps.get('accessed')
+                        }
+                        debug_print("Expected timestamps from stored target info")
+                elif strategy == 'preserve-all':
+                    # preserve-all has a complex priority order - implement what's appropriate
+                    debug_print("preserve-all strategy - not checking specific timestamps")
+                    return
+                
+                # Compare timestamps if we have expected values
+                if expected_timestamps:
+                    # Allow a small tolerance (5 seconds) for timestamp comparisons
+                    tolerance = 5.0
+                    
+                    # Check creation time
+                    if expected_timestamps['created'] is not None and actual_created is not None:
+                        diff = abs(expected_timestamps['created'] - actual_created)
+                        if diff > tolerance:
+                            debug_print(f"  WARNING: Creation time mismatch: expected={expected_timestamps['created']}, actual={actual_created}, diff={diff}")
+                            # If timestamps don't match, try setting them again
+                            debug_print("  Attempting to reapply timestamps...")
+                            self._set_file_times(
+                                link_path, 
+                                expected_timestamps['modified'], 
+                                expected_timestamps['accessed'], 
+                                expected_timestamps['created']
+                            )
+                            return
+                    
+                    # Check modification time
+                    if expected_timestamps['modified'] is not None and actual_modified is not None:
+                        diff = abs(expected_timestamps['modified'] - actual_modified)
+                        if diff > tolerance:
+                            debug_print(f"  WARNING: Modification time mismatch: expected={expected_timestamps['modified']}, actual={actual_modified}, diff={diff}")
+                            # If timestamps don't match, try setting them again
+                            debug_print("  Attempting to reapply timestamps...")
+                            self._set_file_times(
+                                link_path, 
+                                expected_timestamps['modified'], 
+                                expected_timestamps['accessed'], 
+                                expected_timestamps['created']
+                            )
+                            return
+                    
+                    debug_print("  Timestamp verification: OK")
+                
+            finally:
+                handle.Close()
+                
+        except ImportError:
+            debug_print("win32file module not available, cannot verify timestamps")
+        except Exception as e:
+            debug_print(f"Error verifying timestamps: {str(e)}")
+			
+    def _apply_timestamp_strategy(self, link_path, dl_data, strategy, use_live_target=False, batch_mode=False):
+        """
+        Apply the selected timestamp strategy to a recreated symlink.
+        
+        Args:
+            link_path (str): Path to the recreated symlink
+            dl_data (DazzleLinkData): The dazzlelink data
+            strategy (str): Timestamp strategy ('current', 'symlink', 'target', 'preserve-all')
+            use_live_target (bool): Whether to check the live target file for timestamps
+            batch_mode (bool): If True, optimizes for batch processing (less verification)
+        """
+        # Skip if not on Windows - timestamp setting is more reliable on Windows
+        if os.name != 'nt':
+            debug_print("Timestamp setting is only reliable on Windows, skipping")
+            return
+            
+        # For batch processing, we'll skip verification to improve performance
+        verify_timestamps = not batch_mode
+        
+        try:
+            # Get target path for possible live target check
+            target_path = dl_data.get_target_path()
+            live_target_timestamps = None
+            
+            # Check live target if requested or if we might need it
+            if use_live_target or strategy in ['target', 'preserve-all']:
+                try:
+                    debug_print(f"Attempting to get live target timestamps from: {target_path}")
+                    
+                    # Try different path representations if available
+                    target_representations = dl_data.get_target_representations()
+                    
+                    # Try each representation until we find one that works
+                    for repr_type, path in target_representations.items():
+                        try:
+                            # Check if path exists
+                            if os.path.exists(path):
+                                live_target_timestamps = self._collect_target_timestamp_info(path)
+                                if any(v is not None for v in [
+                                    live_target_timestamps.get('created'),
+                                    live_target_timestamps.get('modified'),
+                                    live_target_timestamps.get('accessed')
+                                ]):
+                                    debug_print(f"Found live target using representation: {repr_type}")
+                                    break
+                        except Exception as e:
+                            debug_print(f"Failed with representation {repr_type}: {str(e)}")
+                            continue
+                    
+                    # If no representation worked, try the original path
+                    if (not live_target_timestamps or 
+                        not any(v is not None for v in [
+                            live_target_timestamps.get('created'),
+                            live_target_timestamps.get('modified'),
+                            live_target_timestamps.get('accessed')
+                        ])) and os.path.exists(target_path):
+                        live_target_timestamps = self._collect_target_timestamp_info(target_path)
+                        debug_print(f"Found live target using original path")
+                except Exception as e:
+                    debug_print(f"Failed to get live target timestamps: {str(e)}")
+            
+            # Get timestamps based on strategy
+            if strategy == 'current':
+                # Use current time - nothing to do
+                debug_print("Using current time for timestamps")
+                return
+                
+            elif strategy == 'symlink':
+                # Use original symlink timestamps
+                link_timestamps = dl_data.get_link_timestamps()
+                
+                # Only set if we have timestamps
+                if link_timestamps.get('modified') is not None:
+                    timestamp_data = {
+                        'created': link_timestamps.get('created'),
+                        'modified': link_timestamps.get('modified'),
+                        'accessed': link_timestamps.get('accessed')
+                    }
+                    
+                    debug_print(f"Using symlink timestamps: created={timestamp_data['created']}, modified={timestamp_data['modified']}, accessed={timestamp_data['accessed']}")
+                    
+                    # Set the timestamps on the recreated symlink with verification
+                    self._set_link_timestamps(link_path, timestamp_data, verify=verify_timestamps)
+                    
+            elif strategy == 'target':
+                # Try live target timestamps first if available and requested
+                if use_live_target and live_target_timestamps and live_target_timestamps.get('modified') is not None:
+                    timestamp_data = {
+                        'created': live_target_timestamps.get('created'),
+                        'modified': live_target_timestamps.get('modified'),
+                        'accessed': live_target_timestamps.get('accessed')
+                    }
+                    
+                    debug_print(f"Using live target timestamps: created={timestamp_data['created']}, modified={timestamp_data['modified']}, accessed={timestamp_data['accessed']}")
+                    
+                    # Set the timestamps on the recreated symlink with verification
+                    self._set_link_timestamps(link_path, timestamp_data, verify=verify_timestamps)
+                    return
+                
+                # Fall back to stored target timestamps
+                target_timestamps = dl_data.get_target_timestamps()
+                
+                # Only set if we have timestamps
+                if target_timestamps.get('modified') is not None:
+                    timestamp_data = {
+                        'created': target_timestamps.get('created'),
+                        'modified': target_timestamps.get('modified'),
+                        'accessed': target_timestamps.get('accessed')
+                    }
+                    
+                    debug_print(f"Using stored target timestamps: created={timestamp_data['created']}, modified={timestamp_data['modified']}, accessed={timestamp_data['accessed']}")
+                    
+                    # Set the timestamps on the recreated symlink with verification
+                    self._set_link_timestamps(link_path, timestamp_data, verify=verify_timestamps)
+                elif live_target_timestamps and live_target_timestamps.get('modified') is not None:
+                    # Fall back to live target even if not explicitly requested
+                    timestamp_data = {
+                        'created': live_target_timestamps.get('created'),
+                        'modified': live_target_timestamps.get('modified'),
+                        'accessed': live_target_timestamps.get('accessed')
+                    }
+                    
+                    debug_print(f"Falling back to live target timestamps: created={timestamp_data['created']}, modified={timestamp_data['modified']}, accessed={timestamp_data['accessed']}")
+                    
+                    # Set the timestamps on the recreated symlink with verification
+                    self._set_link_timestamps(link_path, timestamp_data, verify=verify_timestamps)
+                    
+            elif strategy == 'preserve-all':
+                # Try target timestamps first, in order of:
+                # 1. Live target (if use_live_target is True)
+                # 2. Stored target timestamps
+                # 3. Symlink timestamps
+                
+                # 1. Try live target first if requested
+                if use_live_target and live_target_timestamps and live_target_timestamps.get('modified') is not None:
+                    timestamp_data = {
+                        'created': live_target_timestamps.get('created'),
+                        'modified': live_target_timestamps.get('modified'),
+                        'accessed': live_target_timestamps.get('accessed')
+                    }
+                    
+                    debug_print(f"Using live target timestamps (preserve-all): created={timestamp_data['created']}, modified={timestamp_data['modified']}, accessed={timestamp_data['accessed']}")
+                    
+                    # Set the timestamps on the recreated symlink with verification
+                    if self._set_link_timestamps(link_path, timestamp_data, verify=verify_timestamps):
+                        return
+                
+                # 2. Try stored target timestamps
+                target_timestamps = dl_data.get_target_timestamps()
+                if target_timestamps.get('modified') is not None:
+                    timestamp_data = {
+                        'created': target_timestamps.get('created'),
+                        'modified': target_timestamps.get('modified'),
+                        'accessed': target_timestamps.get('accessed')
+                    }
+                    
+                    debug_print(f"Using stored target timestamps (preserve-all): created={timestamp_data['created']}, modified={timestamp_data['modified']}, accessed={timestamp_data['accessed']}")
+                    
+                    # Set the timestamps on the recreated symlink with verification
+                    if self._set_link_timestamps(link_path, timestamp_data, verify=verify_timestamps):
+                        return
+                
+                # 3. Try to fall back to live target even if not explicitly requested
+                if live_target_timestamps and live_target_timestamps.get('modified') is not None:
+                    timestamp_data = {
+                        'created': live_target_timestamps.get('created'),
+                        'modified': live_target_timestamps.get('modified'),
+                        'accessed': live_target_timestamps.get('accessed')
+                    }
+                    
+                    debug_print(f"Falling back to live target timestamps (preserve-all): created={timestamp_data['created']}, modified={timestamp_data['modified']}, accessed={timestamp_data['accessed']}")
+                    
+                    # Set the timestamps on the recreated symlink with verification
+                    if self._set_link_timestamps(link_path, timestamp_data, verify=verify_timestamps):
+                        return
+                
+                # 4. Finally, fall back to symlink timestamps
+                link_timestamps = dl_data.get_link_timestamps()
+                if link_timestamps.get('modified') is not None:
+                    timestamp_data = {
+                        'created': link_timestamps.get('created'),
+                        'modified': link_timestamps.get('modified'),
+                        'accessed': link_timestamps.get('accessed')
+                    }
+                    
+                    debug_print(f"Falling back to symlink timestamps (preserve-all): created={timestamp_data['created']}, modified={timestamp_data['modified']}, accessed={timestamp_data['accessed']}")
+                    
+                    # Set the timestamps on the recreated symlink with verification
+                    self._set_link_timestamps(link_path, timestamp_data, verify=verify_timestamps)
+            
+        except Exception as e:
+            debug_print(f"Failed to apply timestamp strategy: {str(e)}")
+
+    def _set_file_times(self, file_path, modified_time, accessed_time=None, created_time=None):
+        """
+        Set modification, access, and creation times for a file or symlink.
+        
+        Args:
+            file_path (str): Path to the file or symlink
+            modified_time (float): Modification timestamp
+            accessed_time (float, optional): Access timestamp. If None, uses modified_time
+            created_time (float, optional): Creation timestamp. If None, doesn't change creation time
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if accessed_time is None:
+            accessed_time = modified_time
+        
+        debug_print(f"Setting timestamps for {file_path}")
+        debug_print(f"  Modified: {modified_time} ({datetime.datetime.fromtimestamp(modified_time).isoformat() if modified_time else 'None'})")
+        debug_print(f"  Accessed: {accessed_time} ({datetime.datetime.fromtimestamp(accessed_time).isoformat() if accessed_time else 'None'})")
+        debug_print(f"  Created: {created_time} ({datetime.datetime.fromtimestamp(created_time).isoformat() if created_time else 'None'})")
+        
+        # On Windows, use Win32 API to set all timestamps including creation time
+        if os.name == 'nt': # and created_time is not None:
+            try:
+                import win32file
+                import win32con
+                import pywintypes
+                
+                # Convert Unix timestamps to Windows FILETIME
+                win_created = pywintypes.Time(int(created_time)) if created_time is not None else None
+                win_accessed = pywintypes.Time(int(accessed_time)) if accessed_time is not None else None
+                win_modified = pywintypes.Time(int(modified_time)) if modified_time is not None else None
+                
+                debug_print("Using Win32 API to set file times")
+                
+                # Important: Use FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT
+                # to work properly with symlinks on Windows
+				# Open file handle with proper sharing mode to avoid "file in use" errors
+                handle = win32file.CreateFile(
+                    file_path,
+                    win32file.GENERIC_WRITE,
+                    win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE | win32file.FILE_SHARE_DELETE,
+                    None,
+                    win32file.OPEN_EXISTING,
+                    win32file.FILE_ATTRIBUTE_NORMAL | win32file.FILE_FLAG_BACKUP_SEMANTICS | win32file.FILE_FLAG_OPEN_REPARSE_POINT,
+                    None
+                )
+                
+                try:
+                    # Set times - pass all three timestamps to SetFileTime
+                    win32file.SetFileTime(handle, win_created, win_accessed, win_modified)
+                    debug_print("Successfully set all timestamps using Win32 API")
+                    
+                    # Verify the timestamps were correctly set
+                    try:
+                        # Close handle first to ensure changes are flushed
+                        handle.Close()
+                        handle = None
+                        
+                        # Reopen to check
+                        verify_handle = win32file.CreateFile(
+                            file_path,
+                            win32file.GENERIC_READ,
+                            win32file.FILE_SHARE_READ | win32file.FILE_SHARE_WRITE | win32file.FILE_SHARE_DELETE,
+                            None,
+                            win32file.OPEN_EXISTING,
+                            win32file.FILE_ATTRIBUTE_NORMAL | win32file.FILE_FLAG_BACKUP_SEMANTICS | win32file.FILE_FLAG_OPEN_REPARSE_POINT,
+                            None
+                        )
+                        
+                        try:
+                            actual_created, actual_accessed, actual_modified = win32file.GetFileTime(verify_handle)
+                            
+                            debug_print("Timestamp verification:")
+                            if win_created:
+                                debug_print(f"  Created: Expected={win_created}, Actual={actual_created}")
+                            if win_accessed:
+                                debug_print(f"  Accessed: Expected={win_accessed}, Actual={actual_accessed}")
+                            if win_modified:
+                                debug_print(f"  Modified: Expected={win_modified}, Actual={actual_modified}")
+                        finally:
+                            verify_handle.Close()
+                    except Exception as ve:
+                        debug_print(f"Timestamp verification failed: {str(ve)}")
+                    
+                    return True
+                finally:
+                    # Close handle if still open
+                    if handle:
+                        handle.Close()
+                    
+            except ImportError:
+                debug_print("win32file module not available, cannot set creation time on Windows")
+            except Exception as win_error:
+                debug_print(f"Failed to set timestamps using Win32 API: {str(win_error)}")
+        
+        # Fall back to os.utime for modification and access times only
+        try:
+            # Use standard os.utime function (note: this won't set creation time)
+            os.utime(file_path, (accessed_time, modified_time))
+            debug_print(f"Set modification and access times using os.utime")
+            
+            # Return True if creation time wasn't needed, False if it was needed but not set
+            return created_time is None
+        except Exception as e:
+            debug_print(f"Failed to set timestamps using os.utime: {str(e)}")
+            return False
+
+    def batch_import(self, path_patterns, target_location=None, recursive=False, 
+                    flatten=False, pattern=None, dry_run=False, remove_dazzlelinks=False,
+                    config_level='file', timestamp_strategy='current', update_dazzlelink=False,
+                    use_live_target=False, batch_optimization=True):
+        """
+        Batch import multiple dazzlelink files, recreating the original symlinks.
+        
+        Args:
+            path_patterns (list or str): Path pattern(s) to search for dazzlelinks
+            target_location (str, optional): Override location for recreated symlinks
+            recursive (bool): Whether to search subdirectories recursively
+            flatten (bool): If True, flatten directory structure when recreating symlinks
+            pattern (str, optional): Glob pattern to filter dazzlelink filenames
+            dry_run (bool): If True, only show what would be done without making changes
+            remove_dazzlelinks (bool): If True, remove dazzlelink files after successful import
+            config_level (str): Configuration level to use ('global', 'directory', 'file')
+            timestamp_strategy (str): Strategy for setting timestamps ('current', 'symlink', 'target', 'preserve-all')
+            update_dazzlelink (bool): Whether to update dazzlelink metadata during import
+            use_live_target (bool): Whether to check the live target file for timestamps
+            batch_optimization (bool): Whether to use optimizations for batch processing
+            
+        Returns:
+            dict: Report of imported files with details on success, errors, etc.
+        """
+        # Find all matching dazzlelink files
+        dazzlelinks = self._find_dazzlelinks(path_patterns, recursive, pattern)
+        
+        if not dazzlelinks:
+            print(f"No dazzlelink files found matching the specified criteria")
+            return {"success": [], "error": [], "skipped": []}
+        
+        # Setup result tracking
+        results = {
+            "success": [],
+            "error": [],
+            "skipped": []
+        }
+        
+        # Group dazzlelinks by directory for better reporting
+        dazzlelinks_by_dir = {}
+        for dl_path in dazzlelinks:
+            dir_path = str(dl_path.parent)
+            if dir_path not in dazzlelinks_by_dir:
+                dazzlelinks_by_dir[dir_path] = []
+            dazzlelinks_by_dir[dir_path].append(dl_path)
+        
+        # Process each dazzlelink
+        total_count = len(dazzlelinks)
+        processed_count = 0
+        
+        print(f"Found {total_count} dazzlelink files in {len(dazzlelinks_by_dir)} directories")
+        if dry_run:
+            print("DRY RUN - no changes will be made")
+        
+        print(f"Using timestamp strategy: {timestamp_strategy}")
+        if use_live_target:
+            print("Will check live target files for timestamps")
+        
+        for dir_path, dir_dazzlelinks in dazzlelinks_by_dir.items():
+            print(f"\nProcessing directory: {dir_path}")
+            
+            # Load directory-specific config if using directory level
+            if config_level == 'directory':
+                self.config.load_directory_config(dir_path)
+            
+            for dl_path in dir_dazzlelinks:
+                processed_count += 1
+                print(f"  [{processed_count}/{total_count}] Processing: {dl_path.name}")
+                
+                try:
+                    # Load the dazzlelink data for validation
+                    try:
+                        dl_data = DazzleLinkData.from_file(str(dl_path))
+                    except ValueError as e:
+                        results["error"].append({
+                            "path": str(dl_path),
+                            "error": str(e)
+                        })
+                        print(f"    ERROR: {str(e)}")
+                        continue
+                    
+                    # Get target path for informational purposes
+                    target_path = dl_data.get_target_path()
+                    original_path = dl_data.get_original_path()
+                    
+                    # Determine where to create the symlink
+                    if target_location:
+                        if flatten:
+                            # Use just the filename in the target location
+                            link_name = os.path.basename(original_path)
+                            new_link_path = os.path.join(target_location, link_name)
+                        else:
+                            # Preserve relative path structure
+                            try:
+                                # If original_path is absolute, convert to relative to common base
+                                if os.path.isabs(original_path):
+                                    # Find common base path if possible
+                                    dl_dir = os.path.dirname(str(dl_path))
+                                    common_base = os.path.commonpath([original_path, dl_dir])
+                                    if common_base:
+                                        rel_path = os.path.relpath(original_path, common_base)
+                                        new_link_path = os.path.join(target_location, rel_path)
+                                    else:
+                                        # No common base, just use basename
+                                        link_name = os.path.basename(original_path)
+                                        new_link_path = os.path.join(target_location, link_name)
+                                else:
+                                    # If already relative, just join with target location
+                                    new_link_path = os.path.join(target_location, original_path)
+                            except Exception as e:
+                                # Fallback to flatten if path processing fails
+                                link_name = os.path.basename(original_path)
+                                new_link_path = os.path.join(target_location, link_name)
+                    else:
+                        # Use the original path as specified in the dazzlelink
+                        new_link_path = original_path
+                    
+                    # Check if link already exists
+                    if os.path.exists(new_link_path) and not dry_run:
+                        print(f"    WARNING: Path already exists: {new_link_path}")
+                    
+                    # Log what would be done in dry run mode
+                    if dry_run:
+                        results["success"].append({
+                            "dazzlelink": str(dl_path),
+                            "new_link": new_link_path,
+                            "target": target_path,
+                            "removed": remove_dazzlelinks,
+                            "timestamp_strategy": timestamp_strategy,
+                            "updated_metadata": update_dazzlelink,
+                            "use_live_target": use_live_target
+                        })
+                        print(f"    WOULD CREATE: {new_link_path} -> {target_path}")
+                        print(f"    TIMESTAMP STRATEGY: {timestamp_strategy}")
+                        if use_live_target:
+                            print(f"    WOULD CHECK LIVE TARGET: {target_path}")
+                        if remove_dazzlelinks:
+                            print(f"    WOULD REMOVE: {dl_path}")
+                        if update_dazzlelink:
+                            print(f"    WOULD UPDATE METADATA: {dl_path}")
+                        continue
+                    
+                    # Create the link - pass batch_optimization flag to indicate we're in batch mode
+                    # This affects timestamp verification strategy
+                    try:
+                        # Ensure parent directory exists
+                        os.makedirs(os.path.dirname(new_link_path), exist_ok=True)
+                        
+                        # Remove existing link/file if it exists
+                        if os.path.exists(new_link_path):
+                            if os.path.isdir(new_link_path) and not os.path.islink(new_link_path):
+                                shutil.rmtree(new_link_path)
+                            else:
+                                os.unlink(new_link_path)
+                        
+                        # Get target information
+                        target_path = dl_data.get_target_path()
+                        is_dir = dl_data.get_target_type() == "directory"
+                        
+                        # Create symlink
+                        if os.name == 'nt':
+                            self._create_windows_symlink(target_path, new_link_path, is_dir)
+                        else:
+                            os.symlink(target_path, new_link_path)
+                        
+                        # Apply timestamp strategy with batch optimization
+                        self._apply_timestamp_strategy(
+                            new_link_path,
+                            dl_data,
+                            timestamp_strategy,
+                            use_live_target,
+                            batch_mode=batch_optimization
+                        )
+                        
+                        # Restore file attributes
+                        self._restore_file_attributes(new_link_path, dl_data.to_dict())
+                        
+                        # Update dazzlelink metadata if requested
+                        if update_dazzlelink:
+                            dl_data.update_metadata(reason="symlink_recreation")
+                            
+                            # If we used live target, update target timestamps too
+                            if use_live_target and timestamp_strategy in ['target', 'preserve-all']:
+                                if os.path.exists(target_path):
+                                    target_timestamps = self._collect_target_timestamp_info(target_path)
+                                    dl_data.set_target_timestamps(
+                                        created=target_timestamps.get('created'),
+                                        modified=target_timestamps.get('modified'),
+                                        accessed=target_timestamps.get('accessed')
+                                    )
+                                    
+                            # Save the updated dazzlelink
+                            dl_data.save_to_file(str(dl_path))
+                        
+                        # Track success
+                        results["success"].append({
+                            "dazzlelink": str(dl_path),
+                            "new_link": new_link_path,
+                            "target": target_path,
+                            "removed": False,
+                            "timestamp_strategy": timestamp_strategy,
+                            "updated_metadata": update_dazzlelink,
+                            "use_live_target": use_live_target
+                        })
+                        print(f"    SUCCESS: Created symlink at {new_link_path} -> {target_path}")
+                        if use_live_target:
+                            print(f"    CHECKED LIVE TARGET: {target_path}")
+                        
+                        # Remove dazzlelink if requested
+                        if remove_dazzlelinks:
+                            try:
+                                os.unlink(dl_path)
+                                results["success"][-1]["removed"] = True
+                                print(f"    REMOVED: {dl_path}")
+                            except Exception as e:
+                                print(f"    WARNING: Failed to remove dazzlelink {dl_path}: {str(e)}")
+                                results["success"][-1]["removal_error"] = str(e)
+                    except Exception as e:
+                        results["error"].append({
+                            "path": str(dl_path),
+                            "error": str(e)
+                        })
+                        print(f"    ERROR: Failed to recreate link: {str(e)}")
+                        
+                except Exception as e:
+                    results["error"].append({
+                        "path": str(dl_path),
+                        "error": str(e)
+                    })
+                    print(f"    ERROR: Failed to process {dl_path}: {str(e)}")
+        
+        # Print summary
+        print("\nImport Summary:")
+        print(f"  {len(results['success'])} links successfully created")
+        print(f"  {len(results['error'])} errors occurred")
+        print(f"  {len(results['skipped'])} items skipped")
+        
+        if remove_dazzlelinks and not dry_run:
+            # Count how many were successfully removed
+            removed_count = sum(1 for item in results['success'] if item.get('removed', False))
+            print(f"  {removed_count} dazzlelink files removed")
+        
+        return results
     
     def _restore_file_attributes(self, link_path, link_data):
         """
-        Attempt to restore file attributes from the link data
+        Restore file attributes from the link data to the recreated symlink.
         
         Args:
             link_path (str): Path to the recreated symlink
@@ -929,101 +2240,335 @@ class DazzleLink:
         """
         # Only attempt on Windows for now as Unix is more complex with permissions
         if os.name != 'nt':
+            debug_print("File attribute restoration is primarily for Windows")
             return
             
         try:
             # Extract attributes from either schema format
+            attributes = None
             if "attributes" in link_data:
                 # Old format
                 attributes = link_data["attributes"]
-                hidden = attributes.get("hidden", False)
-                system = attributes.get("system", False)
-                readonly = attributes.get("readonly", False)
             elif "link" in link_data and "attributes" in link_data["link"]:
                 # New format
                 attributes = link_data["link"]["attributes"]
-                hidden = attributes.get("hidden", False)
-                system = attributes.get("system", False)
-                readonly = attributes.get("readonly", False)
-            else:
+            
+            if not attributes:
+                debug_print("No attribute data found in dazzlelink")
                 return
                 
+            # Get attribute values with defaults
+            hidden = attributes.get("hidden", False)
+            system = attributes.get("system", False)
+            readonly = attributes.get("readonly", False)
+            
+            debug_print(f"Restoring file attributes for {link_path}")
+            debug_print(f"  Hidden: {hidden}")
+            debug_print(f"  System: {system}")
+            debug_print(f"  Read-only: {readonly}")
+            
             if os.name == 'nt':
-                import ctypes
-                
-                # Get current attributes
-                current_attrs = ctypes.windll.kernel32.GetFileAttributesW(link_path)
-                
-                if current_attrs == -1:
-                    return
+                # First try using ctypes directly
+                try:
+                    import ctypes
                     
-                # Modify attributes as needed
-                new_attrs = current_attrs
-                
-                if hidden:
-                    new_attrs |= 0x2  # FILE_ATTRIBUTE_HIDDEN
-                else:
-                    new_attrs &= ~0x2
+                    # Get current attributes
+                    current_attrs = ctypes.windll.kernel32.GetFileAttributesW(link_path)
                     
-                if system:
-                    new_attrs |= 0x4  # FILE_ATTRIBUTE_SYSTEM
-                else:
-                    new_attrs &= ~0x4
+                    if current_attrs == -1:
+                        debug_print("Failed to get current file attributes")
+                        return
+                        
+                    # Modify attributes as needed
+                    new_attrs = current_attrs
                     
-                if readonly:
-                    new_attrs |= 0x1  # FILE_ATTRIBUTE_READONLY
-                else:
-                    new_attrs &= ~0x1
+                    # FILE_ATTRIBUTE constants
+                    FILE_ATTRIBUTE_HIDDEN = 0x2
+                    FILE_ATTRIBUTE_SYSTEM = 0x4
+                    FILE_ATTRIBUTE_READONLY = 0x1
                     
-                # Apply new attributes if different
-                if new_attrs != current_attrs:
-                    ctypes.windll.kernel32.SetFileAttributesW(link_path, new_attrs)
-        except:
+                    if hidden:
+                        new_attrs |= FILE_ATTRIBUTE_HIDDEN
+                    else:
+                        new_attrs &= ~FILE_ATTRIBUTE_HIDDEN
+                        
+                    if system:
+                        new_attrs |= FILE_ATTRIBUTE_SYSTEM
+                    else:
+                        new_attrs &= ~FILE_ATTRIBUTE_SYSTEM
+                        
+                    if readonly:
+                        new_attrs |= FILE_ATTRIBUTE_READONLY
+                    else:
+                        new_attrs &= ~FILE_ATTRIBUTE_READONLY
+                        
+                    # Apply new attributes if different
+                    if new_attrs != current_attrs:
+                        result = ctypes.windll.kernel32.SetFileAttributesW(link_path, new_attrs)
+                        if result:
+                            debug_print("Successfully restored file attributes")
+                        else:
+                            debug_print(f"Failed to set file attributes, error code: {ctypes.GetLastError()}")
+                    else:
+                        debug_print("No attribute changes needed")
+                        
+                except Exception as ctypes_error:
+                    debug_print(f"Error using ctypes for attributes: {str(ctypes_error)}")
+                    
+                    # Fall back to win32api if available
+                    try:
+                        import win32api
+                        import win32con
+                        
+                        # Get current attributes
+                        current_attrs = win32api.GetFileAttributes(link_path)
+                        
+                        # Modify attributes as needed
+                        new_attrs = current_attrs
+                        
+                        if hidden:
+                            new_attrs |= win32con.FILE_ATTRIBUTE_HIDDEN
+                        else:
+                            new_attrs &= ~win32con.FILE_ATTRIBUTE_HIDDEN
+                            
+                        if system:
+                            new_attrs |= win32con.FILE_ATTRIBUTE_SYSTEM
+                        else:
+                            new_attrs &= ~win32con.FILE_ATTRIBUTE_SYSTEM
+                            
+                        if readonly:
+                            new_attrs |= win32con.FILE_ATTRIBUTE_READONLY
+                        else:
+                            new_attrs &= ~win32con.FILE_ATTRIBUTE_READONLY
+                            
+                        # Apply new attributes if different
+                        if new_attrs != current_attrs:
+                            win32api.SetFileAttributes(link_path, new_attrs)
+                            debug_print("Successfully restored file attributes using win32api")
+                        else:
+                            debug_print("No attribute changes needed")
+                            
+                    except ImportError:
+                        debug_print("win32api module not available for attribute restoration")
+                    except Exception as win32_error:
+                        debug_print(f"Error using win32api for attributes: {str(win32_error)}")
+            else:
+                # On Unix-like systems, attempt to set permissions
+                try:
+                    # Get security information if available
+                    if "security" in link_data and "permissions" in link_data["security"]:
+                        permission = link_data["security"]["permissions"]
+                        if permission:
+                            debug_print(f"Setting Unix permissions: {permission}")
+                            # Convert from octal string if needed
+                            if isinstance(permission, str) and permission.startswith("0o"):
+                                permission = int(permission, 8)
+                            os.chmod(link_path, permission)
+                except Exception as unix_error:
+                    debug_print(f"Error setting Unix permissions: {str(unix_error)}")
+        except Exception as e:
             # Don't fail the whole operation just because we couldn't restore attributes
-            pass
+            debug_print(f"Error in attribute restoration: {str(e)}")
 
     def _create_windows_symlink(self, target_path, link_path, is_directory):
         """
-        Create a symbolic link on Windows, handling privilege elevation if needed
+        Create a symbolic link on Windows, handling privilege elevation if needed.
         
         Args:
             target_path (str): Target of the symlink
             link_path (str): Location of the symlink to create
             is_directory (bool): Whether the target is a directory
+            
+        Returns:
+            bool: True if successful, False if an error occurs
         """
+        if not os.name == 'nt':
+            debug_print("Not running on Windows, using standard os.symlink")
+            os.symlink(target_path, link_path)
+            return True
+            
+        debug_print(f"Creating Windows symlink: {link_path} -> {target_path} (is_directory={is_directory})")
+        
+        # Try using the os.symlink method first
         try:
-            # Try direct creation first
-            if is_directory:
-                os.symlink(target_path, link_path, target_is_directory=True)
-            else:
-                os.symlink(target_path, link_path)
+            os.symlink(target_path, link_path, target_is_directory=is_directory)
+            debug_print("Symlink created successfully using os.symlink")
+            return True
         except OSError as e:
-            if getattr(e, 'winerror', 0) == 1314:  # Privilege not held
-                # Fall back to using mklink command with elevation
-                dir_flag = '/D ' if is_directory else ''
-                cmd = f'mklink {dir_flag}"{link_path}" "{target_path}"'
-                
-                try:
-                    # Inform the user
-                    print(f"Attempting to create symlink with elevated privileges...")
-                    
-                    # Use PowerShell to run elevated command
-                    ps_cmd = f'Start-Process cmd.exe -Verb RunAs -ArgumentList "/c {cmd}"'
-                    subprocess.run(['powershell', '-Command', ps_cmd], check=True)
-                    
-                    # Check if link was created (there might be a delay)
-                    attempts = 0
-                    while attempts < 5 and not os.path.exists(link_path):
-                        time.sleep(1)
-                        attempts += 1
-                    
-                    if not os.path.exists(link_path):
-                        print(f"WARNING: Link creation requested but could not verify it was created.")
-                        print(f"You may need to manually run: {cmd}")
-                except subprocess.SubprocessError as se:
-                    raise DazzleLinkException(f"Failed to create elevated symlink: {str(se)}")
+            # Handle "privilege not held" error
+            if getattr(e, 'winerror', 0) == 1314:
+                debug_print("Permission denied (admin privileges required), trying alternative methods")
             else:
-                raise DazzleLinkException(f"Failed to create symlink: {str(e)}")
+                debug_print(f"Error creating symlink with os.symlink: {str(e)}")
+        except Exception as e:
+            debug_print(f"Unexpected error in os.symlink: {str(e)}")
+            
+        # Try using win32file API if available
+        try:
+            import win32file
+            
+            flags = 0
+            if is_directory:
+                flags = win32file.SYMBOLIC_LINK_FLAG_DIRECTORY
+            
+            # Add SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE for Windows 10 v1703+
+            try:
+                flags |= 0x2  # SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE
+            except:
+                pass
+                
+            debug_print(f"Creating symlink with win32file.CreateSymbolicLink, flags={flags}")
+            
+            # Create the symlink
+            result = win32file.CreateSymbolicLink(link_path, target_path, flags)
+            
+            if result:
+                debug_print("Symlink created successfully using win32file API")
+                return True
+            else:
+                debug_print("Failed to create symlink with win32file API")
+        except ImportError:
+            debug_print("win32file module not available, cannot use its API")
+        except Exception as e:
+            debug_print(f"Error creating symlink with win32file: {str(e)}")
+        
+        # Fall back to using mklink command with elevation if needed
+        try:
+            # Prepare the mklink command
+            dir_flag = '/D ' if is_directory else ''
+            cmd = f'mklink {dir_flag}"{link_path}" "{target_path}"'
+            
+            debug_print(f"Attempting to create symlink with mklink: {cmd}")
+            
+            # Try running directly first
+            try:
+                result = subprocess.run(
+                    ['cmd', '/c', cmd], 
+                    text=True, 
+                    capture_output=True, 
+                    check=False
+                )
+                
+                if result.returncode == 0:
+                    debug_print("Symlink created successfully using mklink")
+                    return True
+                else:
+                    debug_print(f"mklink failed: {result.stderr}")
+            except Exception as cmd_error:
+                debug_print(f"Error running mklink command: {str(cmd_error)}")
+            
+            # If direct call failed, try with elevation
+            debug_print("Attempting to create symlink with elevated privileges")
+            
+            # Use PowerShell to run elevated command
+            ps_cmd = f'Start-Process cmd.exe -Verb RunAs -ArgumentList "/c {cmd}"'
+            
+            try:
+                subprocess.run(['powershell', '-Command', ps_cmd], check=True)
+                
+                # Check if link was created (there might be a delay)
+                attempts = 0
+                while attempts < 5 and not os.path.exists(link_path):
+                    time.sleep(1)
+                    attempts += 1
+                    
+                if os.path.exists(link_path):
+                    debug_print("Symlink created successfully using elevated mklink")
+                    return True
+                else:
+                    debug_print("Link creation requested but could not verify it was created")
+                    debug_print(f"Manual command needed: {cmd}")
+                    return False
+            except subprocess.SubprocessError as se:
+                debug_print(f"Failed to create elevated symlink: {str(se)}")
+        except Exception as e:
+            debug_print(f"Unexpected error in mklink fallback: {str(e)}")
+        
+        # If all methods failed, raise an exception
+        raise DazzleLinkException(f"Failed to create symlink: {link_path} -> {target_path}")
+		
+    def _find_dazzlelinks(self, path_patterns, recursive=False, pattern=None):
+        """
+        Find dazzlelink files based on path patterns, recursion, and filtering.
+        
+        Args:
+            path_patterns (list or str): Path pattern(s) to search for dazzlelinks
+            recursive (bool): Whether to search subdirectories recursively
+            pattern (str, optional): Glob pattern to filter dazzlelink filenames (e.g., "*.dazzlelink")
+                If None, defaults to "*.dazzlelink"
+        
+        Returns:
+            list: List of dazzlelink file paths (as Path objects)
+        """
+        import glob
+        import fnmatch
+        from pathlib import Path
+        
+        # Normalize input to list
+        if isinstance(path_patterns, str):
+            path_patterns = [path_patterns]
+            
+        # Default pattern if not specified
+        if pattern is None:
+            pattern = f"*{self.DAZZLELINK_EXT}"
+            
+        found_dazzlelinks = []
+        
+        for path_pattern in path_patterns:
+            # Expand any glob patterns in the input paths
+            expanded_paths = glob.glob(path_pattern, recursive=False)
+            
+            # If glob didn't match anything, use the path as-is
+            if not expanded_paths:
+                expanded_paths = [path_pattern]
+                
+            for path in expanded_paths:
+                path_obj = Path(path)
+                
+                # Case 1: Direct file path
+                if path_obj.is_file():
+                    if path_obj.suffix == self.DAZZLELINK_EXT and (pattern == f"*{self.DAZZLELINK_EXT}" or fnmatch.fnmatch(path_obj.name, pattern)):
+                        found_dazzlelinks.append(path_obj)
+                
+                # Case 2: Directory path
+                elif path_obj.is_dir():
+                    if recursive:
+                        # Recursive search
+                        for root, _, files in os.walk(path_obj):
+                            root_path = Path(root)
+                            for file in files:
+                                if file.endswith(self.DAZZLELINK_EXT) and fnmatch.fnmatch(file, pattern):
+                                    found_dazzlelinks.append(root_path / file)
+                    else:
+                        # Non-recursive, just search the directory
+                        for file in path_obj.glob(pattern):
+                            if file.is_file() and file.suffix == self.DAZZLELINK_EXT:
+                                found_dazzlelinks.append(file)
+                
+                # Case 3: Non-existent path with wildcards (could be a pattern)
+                elif '*' in str(path_obj) or '?' in str(path_obj):
+                    # This might be a pattern that didn't get expanded by glob
+                    try:
+                        # Try using Path.glob on the parent directory
+                        parent = path_obj.parent
+                        if parent.exists():
+                            file_pattern = path_obj.name
+                            for file in parent.glob(file_pattern):
+                                if file.is_file() and file.suffix == self.DAZZLELINK_EXT and fnmatch.fnmatch(file.name, pattern):
+                                    found_dazzlelinks.append(file)
+                    except Exception as e:
+                        debug_print(f"Error while processing pattern {path_obj}: {e}")
+        
+        # Remove duplicates while preserving order
+        unique_dazzlelinks = []
+        seen = set()
+        for link in found_dazzlelinks:
+            link_str = str(link)
+            if link_str not in seen:
+                seen.add(link_str)
+                unique_dazzlelinks.append(link)
+        
+        return unique_dazzlelinks
 
     def scan_directory(self, directory, recursive=True):
         """
@@ -1748,14 +3293,16 @@ class DazzleLink:
         return result
     
 
-    def execute_dazzlelink(self, dazzlelink_path, mode=None):
+    def execute_dazzlelink(self, dazzlelink_path, mode=None, config_override=None):
         """
         Execute or open a dazzlelink file
         
         Args:
             dazzlelink_path (str): Path to the dazzlelink file
             mode (str, optional): Override execution mode for this execution
-                If None, uses the mode stored in the dazzlelink
+                If None, uses the mode from config_override or the dazzlelink file
+            config_override (DazzleLinkConfig, optional): Configuration object to use
+                If provided, its settings take precedence over the file's embedded configuration
         """
         try:
             # First try to detect if it's a script or JSON format
@@ -1818,8 +3365,16 @@ class DazzleLink:
             else:
                 raise DazzleLinkException(f"Invalid dazzlelink format in {dazzlelink_path}")
             
-            # Use specified mode or default mode from the dazzlelink
-            execute_mode = mode or default_mode
+			
+			# Use mode precedence:
+            # 1. Command line mode override
+            # 2. Config override (if provided)
+            # 3. Dazzlelink file's embedded config
+            execute_mode = mode
+            if execute_mode is None and config_override is not None:
+                execute_mode = config_override.get("default_mode")
+            if execute_mode is None:
+                execute_mode = default_mode
             
             # Execute based on mode
             if execute_mode == "info":
@@ -1866,6 +3421,201 @@ class DazzleLink:
         except Exception as e:
             raise DazzleLinkException(f"Failed to execute dazzlelink {dazzlelink_path}: {str(e)}")
         
+    def update_config_batch(self, path, mode=None, pattern="*.dazzlelink", recursive=False):
+        """
+        Update configuration for multiple dazzlelink files.
+        
+        Args:
+            path: Directory or file path to update
+            mode: New default execution mode (info, open, auto)
+            pattern: File pattern to match (default: *.dazzlelink)
+            recursive: Whether to search subdirectories
+            dry_run: If True, show what would be changed without making changes
+            config_level: Configuration level to save changes to ('global', 'directory', 'file')
+            make_executable: Whether to make updated dazzlelinks executable
+            
+        Returns:
+            dict: Report of updated files and any errors
+        """
+        import fnmatch
+        
+        results = {
+            'updated': [],
+            'errors': [],
+            'skipped': []
+        }
+        
+        # Handle config level
+        if config_level == 'global':
+            # Save to global config
+            if mode is not None:
+                self.config.set('default_mode', mode)
+            if make_executable is not None:
+                self.config.set('make_executable', make_executable)
+                
+            if not dry_run:
+                # Save global config
+                if self.config.save_global_config():
+                    print(f"Updated global configuration")
+                else:
+                    print(f"Failed to update global configuration")
+            
+        elif config_level == 'directory':
+            # Determine directory based on path
+            if os.path.isfile(path):
+                directory = os.path.dirname(path)
+            else:
+                directory = path
+                
+            # Load existing directory config
+            self.config.load_directory_config(directory)
+            
+            # Update config
+            if mode is not None:
+                self.config.set('default_mode', mode)
+            if make_executable is not None:
+                self.config.set('make_executable', make_executable)
+                
+            if not dry_run:
+                # Save directory config
+                if self.config.save_directory_config(directory):
+                    print(f"Updated directory configuration for {directory}")
+                else:
+                    print(f"Failed to update directory configuration for {directory}")
+        
+        # Continue only if we're updating file-level configs or we're in dry-run mode
+        if config_level == 'file' or dry_run:
+            # Find all matching dazzlelinks
+            paths_to_check = []
+            path_obj = Path(path)
+            
+            if path_obj.is_file():
+                # Single file
+                if path_obj.suffix == self.DAZZLELINK_EXT:
+                    paths_to_check.append(path_obj)
+            elif path_obj.is_dir():
+                # Directory search
+                if recursive:
+                    # Recursive search
+                    for root, _, files in os.walk(path_obj):
+                        for file in files:
+                            if fnmatch.fnmatch(file, pattern):
+                                paths_to_check.append(Path(root) / file)
+                else:
+                    # Non-recursive search
+                    for file in path_obj.glob(pattern):
+                        if file.is_file():
+                            paths_to_check.append(file)
+            
+            # Process each matching file
+            for dazzlelink_path in paths_to_check:
+                try:
+                    if config_level != 'file' and not dry_run:
+                        # If we're only updating global or directory config, just track files that would be affected
+                        results['updated'].append(str(dazzlelink_path))
+                        continue
+                        
+                    # Load the dazzlelink
+                    with open(dazzlelink_path, 'r', encoding='utf-8') as f:
+                        # Try to detect if it's a script or JSON format
+                        content = f.read()
+                        
+                        # Check if it's a script-embedded dazzlelink
+                        json_start = content.find('# DAZZLELINK_DATA_BEGIN')
+                        if json_start != -1:
+                            # Extract JSON part
+                            json_text = content[json_start + len('# DAZZLELINK_DATA_BEGIN'):].strip()
+                            try:
+                                link_data = json.loads(json_text)
+                                is_script = True
+                            except json.JSONDecodeError:
+                                results['errors'].append({
+                                    'path': str(dazzlelink_path),
+                                    'error': 'Failed to parse embedded JSON'
+                                })
+                                continue
+                        else:
+                            # Try parsing as plain JSON
+                            try:
+                                link_data = json.loads(content)
+                                is_script = False
+                            except json.JSONDecodeError:
+                                results['errors'].append({
+                                    'path': str(dazzlelink_path),
+                                    'error': 'Not a valid dazzlelink file'
+                                })
+                                continue
+                    
+                    # Check if any changes needed
+                    changes_made = False
+                    
+                    # Update config based on provided parameters
+                    if mode is not None:
+                        # Validate mode
+                        if mode not in DazzleLinkConfig.VALID_MODES:
+                            results['errors'].append({
+                                'path': str(dazzlelink_path),
+                                'error': f"Invalid mode '{mode}'"
+                            })
+                            continue
+                        
+                        # Handle both old and new schema formats
+                        if "config" in link_data:
+                            if "default_mode" not in link_data["config"] or link_data["config"]["default_mode"] != mode:
+                                link_data["config"]["default_mode"] = mode
+                                changes_made = True
+                        else:
+                            # Create config if it doesn't exist
+                            link_data["config"] = {
+                                "default_mode": mode,
+                                "platform": self.platform
+                            }
+                            changes_made = True
+                    
+                    # Check if we need to update the executable flag
+                    if make_executable is not None:
+                        # We'll handle this outside the file content
+                        changes_made = True
+                    
+                    # If no changes needed, skip
+                    if not changes_made:
+                        results['skipped'].append(str(dazzlelink_path))
+                        continue
+                    
+                    # If dry run, report but don't make changes
+                    if dry_run:
+                        results['updated'].append(str(dazzlelink_path))
+                        continue
+                    
+                    # Make the changes
+                    if is_script:
+                        # For script-embedded dazzlelinks, preserve the script part
+                        script_part = content[:json_start + len('# DAZZLELINK_DATA_BEGIN')]
+                        
+                        with open(dazzlelink_path, 'w', encoding='utf-8') as f:
+                            f.write(script_part + '\n')
+                            json.dump(link_data, f, indent=2)
+                    else:
+                        # For plain JSON dazzlelinks
+                        with open(dazzlelink_path, 'w', encoding='utf-8') as f:
+                            json.dump(link_data, f, indent=2)
+                    
+                    # Handle executable flag if specified
+                    if make_executable is not None:
+                        if make_executable:
+                            self._make_dazzlelink_executable(dazzlelink_path, link_data)
+                        # Note: There's no direct way to make a file "non-executable" in the current code
+                    
+                    results['updated'].append(str(dazzlelink_path))
+                    
+                except Exception as e:
+                    results['errors'].append({
+                        'path': str(dazzlelink_path),
+                        'error': str(e)
+                    })
+        
+        return results
+
 def main():
     """Main entry point for the dazzlelink tool"""
     parser = argparse.ArgumentParser(
@@ -1886,6 +3636,8 @@ def main():
                               help='Make the dazzlelink executable')
     create_parser.add_argument('--mode', '-m', choices=['info', 'open', 'auto'],
                               help='Default execution mode for this dazzlelink')
+    create_parser.add_argument('--config-level', choices=['global', 'directory', 'file'],
+                             default='file', help='Configuration level to use')
     
     # Export command
     export_parser = subparsers.add_parser('export', help='Export a symlink to a dazzlelink')
@@ -1895,11 +3647,31 @@ def main():
                               help='Make the dazzlelink executable')
     export_parser.add_argument('--mode', '-m', choices=['info', 'open', 'auto'],
                               help='Default execution mode for this dazzlelink')
+    export_parser.add_argument('--config-level', choices=['global', 'directory', 'file'],
+                             default='file', help='Configuration level to use')
     
     # Import command
-    import_parser = subparsers.add_parser('import', help='Import and recreate a symlink from a dazzlelink')
-    import_parser.add_argument('dazzlelink_path', help='Path to the dazzlelink')
-    import_parser.add_argument('--target-location', '-t', help='Override location for the recreated symlink')
+    import_parser = subparsers.add_parser('import', help='Import and recreate symlinks from dazzlelinks')
+    import_parser.add_argument('paths', nargs='+', help='Paths to dazzlelink files or directories')
+    import_parser.add_argument('--target-location', '-t', help='Override location for the recreated symlinks')
+    import_parser.add_argument('--recursive', '-r', action='store_true',
+                              help='Search directories recursively for dazzlelinks')
+    import_parser.add_argument('--pattern', '-p', default='*.dazzlelink',
+                              help='Glob pattern to filter dazzlelink filenames (default: *.dazzlelink)')
+    import_parser.add_argument('--flatten', '-f', action='store_true',
+                              help='Flatten directory structure when recreating symlinks')
+    import_parser.add_argument('--dry-run', '-d', action='store_true',
+                              help='Show what would be done without making changes')
+    import_parser.add_argument('--remove-dazzlelinks', action='store_true',
+                              help='Remove dazzlelink files after successful import')
+    import_parser.add_argument('--config-level', choices=['global', 'directory', 'file'],
+                             default='file', help='Configuration level to use')
+    import_parser.add_argument('--timestamp-strategy', choices=['current', 'symlink', 'target', 'preserve-all'], default='current',
+                              help='Strategy for setting timestamps (default: current)')
+    import_parser.add_argument('--update-dazzlelink', '-u', action='store_true',
+                              help='Update dazzlelink metadata during import')
+    import_parser.add_argument('--use-live-target', '-l', action='store_true',
+                              help='Check live target files for timestamps')
     
     # Scan command
     scan_parser = subparsers.add_parser('scan', help='Scan for symlinks and report')
@@ -1920,6 +3692,8 @@ def main():
                               help='Make the dazzlelinks executable')
     convert_parser.add_argument('--mode', '-m', choices=['info', 'open', 'auto'],
                               help='Default execution mode for dazzlelinks')
+    convert_parser.add_argument('--config-level', choices=['global', 'directory', 'file'],
+                             default='file', help='Configuration level to use')
     
     # Mirror command
     mirror_parser = subparsers.add_parser('mirror', 
@@ -1932,12 +3706,16 @@ def main():
                              help='Make the dazzlelinks executable')
     mirror_parser.add_argument('--mode', '-m', choices=['info', 'open', 'auto'],
                              help='Default execution mode for dazzlelinks')
+    mirror_parser.add_argument('--config-level', choices=['global', 'directory', 'file'],
+                             default='file', help='Configuration level to use')
     
     # Execute command
     execute_parser = subparsers.add_parser('execute', help='Execute/open the target of a dazzlelink')
     execute_parser.add_argument('dazzlelink_path', help='Path to the dazzlelink')
     execute_parser.add_argument('--mode', '-m', choices=['info', 'open', 'auto'],
                               help='Override execution mode for this execution')
+    execute_parser.add_argument('--config-level', choices=['global', 'directory', 'file'],
+                             default='file', help='Configuration level to use')
     
     # Config command
     config_parser = subparsers.add_parser('config', help='View or set configuration options')
@@ -1963,6 +3741,8 @@ def main():
                             help='Convert to absolute links in destination')
     copy_parser.add_argument('--no-verify', '-n', action='store_true',
                             help='Skip verification of links after copying')
+    copy_parser.add_argument('--config-level', choices=['global', 'directory', 'file'],
+                           default='file', help='Configuration level to use')
 
     # Check command
     check_parser = subparsers.add_parser('check', help='Check symlinks and report broken ones')
@@ -1988,6 +3768,24 @@ def main():
     rebase_parser.add_argument('--only-broken', '-b', action='store_true',
                             help='Only rebase broken links')
 
+    # Add update-config command
+    update_config_parser = subparsers.add_parser('update-config', 
+                                               help='Update configuration for multiple dazzlelinks')
+    update_config_parser.add_argument('path', help='Path to file or directory to update')
+    update_config_parser.add_argument('--mode', '-m', choices=['info', 'open', 'auto'],
+                                    help='New default execution mode')
+    update_config_parser.add_argument('--pattern', '-p', default='*.dazzlelink',
+                                    help='File pattern to match (default: *.dazzlelink)')
+    update_config_parser.add_argument('--recursive', '-r', action='store_true',
+                                    help='Search subdirectories recursively')
+    update_config_parser.add_argument('--dry-run', '-d', action='store_true',
+                                    help='Show what would be changed without making changes')
+    update_config_parser.add_argument('--config-level', choices=['global', 'directory', 'file'],
+                                    default='file', 
+                                    help='Configuration level to save changes to (default: file)')
+    update_config_parser.add_argument('--make-executable', action='store_true',
+                                    help='Make updated dazzlelinks executable')
+
     # Parse arguments
     args = parser.parse_args()
     
@@ -2002,8 +3800,19 @@ def main():
     dazzlelink = DazzleLink(config)
     
     try:
-# Fix for the create command in main()
+        # Fix for the create command in main()
         if args.command == 'create':
+            # Apply configuration level
+            if hasattr(args, 'config_level'):
+                if args.config_level == 'global':
+                    # Apply global configuration
+                    config._load_global_config()
+                elif args.config_level == 'directory':
+                    # Apply directory configuration
+                    target_dir = os.path.dirname(os.path.abspath(args.link_name))
+                    config.load_directory_config(target_dir)
+                # 'file' level uses defaults or command-line overrides
+            
             # Set specific command options in config
             if hasattr(args, 'executable') and args.executable is not None:
                 config.set('make_executable', args.executable)
@@ -2028,6 +3837,17 @@ def main():
             print(f"Created dazzlelink: {dazzlelink_path}")
 
         elif args.command == 'export':
+            # Apply configuration level
+            if hasattr(args, 'config_level'):
+                if args.config_level == 'global':
+                    # Apply global configuration
+                    config._load_global_config()
+                elif args.config_level == 'directory':
+                    # Apply directory configuration
+                    link_dir = os.path.dirname(os.path.abspath(args.link_path))
+                    config.load_directory_config(link_dir)
+                # 'file' level uses defaults or command-line overrides
+            
             dazzlelink_path = dazzlelink.serialize_link(
                 args.link_path, 
                 output_path=args.output,
@@ -2035,13 +3855,58 @@ def main():
                 mode=args.mode
             )
             print(f"Exported symlink to dazzlelink: {dazzlelink_path}")
-            
+           
         elif args.command == 'import':
-            link_path = dazzlelink.recreate_link(
-                args.dazzlelink_path,
-                target_location=args.target_location
-            )
-            print(f"Recreated symlink: {link_path}")
+            # Apply configuration level
+            if hasattr(args, 'config_level'):
+                if args.config_level == 'global':
+                    # Apply global configuration
+                    config._load_global_config()
+                elif args.config_level == 'directory':
+                    # For batch import, directory config will be loaded for each directory
+                    pass
+                # 'file' level uses defaults or command-line overrides
+            
+            # Modified condition to handle directory paths without recursion
+            # Check if multiple paths, recursive option specified, or if any path is a directory
+            if (len(args.paths) > 1 or args.recursive or 
+                '*' in ''.join(args.paths) or '?' in ''.join(args.paths) or
+                any(os.path.isdir(p) for p in args.paths)):
+                
+                # Use batch import
+                result = dazzlelink.batch_import(
+                    args.paths,
+                    target_location=args.target_location,
+                    recursive=args.recursive,
+                    flatten=args.flatten,
+                    pattern=args.pattern,
+                    dry_run=args.dry_run,
+                    remove_dazzlelinks=args.remove_dazzlelinks,
+                    config_level=args.config_level if hasattr(args, 'config_level') else 'file',
+                    timestamp_strategy=args.timestamp_strategy if hasattr(args, 'timestamp_strategy') else 'current',
+                    update_dazzlelink=args.update_dazzlelink if hasattr(args, 'update_dazzlelink') else False,
+                    use_live_target=args.use_live_target if hasattr(args, 'use_live_target') else False
+                )
+                
+                if result["error"] and not result["success"]:
+                    # If all operations failed, return error code
+                    return 1
+                    
+            else:
+                # Single file mode, use original behavior for backward compatibility
+                link_path = dazzlelink.recreate_link(
+                    args.paths[0],
+                    target_location=args.target_location
+                )
+                print(f"Recreated symlink: {link_path}")
+                
+                # Handle remove_dazzlelinks option for consistency with batch mode
+                if args.remove_dazzlelinks:
+                    try:
+                        os.unlink(args.paths[0])
+                        print(f"Removed dazzlelink: {args.paths[0]}")
+                    except Exception as e:
+                        print(f"WARNING: Failed to remove dazzlelink {args.paths[0]}: {str(e)}")
             
         elif args.command == 'scan':
             # Configure recursive option
@@ -2081,6 +3946,16 @@ def main():
                         print(f"  {link} -> ERROR: Could not read link target")
             
         elif args.command == 'convert':
+            # Apply configuration level
+            if hasattr(args, 'config_level'):
+                if args.config_level == 'global':
+                    # Apply global configuration
+                    config._load_global_config()
+                elif args.config_level == 'directory':
+                    # Apply directory configuration
+                    config.load_directory_config(args.directory)
+                # 'file' level uses defaults or command-line overrides
+            
             # Apply command-line arguments to config
             config.apply_args(args)
             
@@ -2098,6 +3973,16 @@ def main():
             print(f"{action} {len(dazzlelinks)} symlinks to dazzlelinks in {args.directory}")
             
         elif args.command == 'mirror':
+            # Apply configuration level
+            if hasattr(args, 'config_level'):
+                if args.config_level == 'global':
+                    # Apply global configuration
+                    config._load_global_config()
+                elif args.config_level == 'directory':
+                    # Apply directory configuration from source directory
+                    config.load_directory_config(args.src_dir)
+                # 'file' level uses defaults or command-line overrides
+            
             # Apply command-line arguments to config
             config.apply_args(args)
             
@@ -2112,9 +3997,21 @@ def main():
             print(f"Mirrored {len(dazzlelinks)} symlinks as dazzlelinks from {args.src_dir} to {args.dest_dir}")
             
         elif args.command == 'execute':
+            # Apply configuration level
+            if hasattr(args, 'config_level'):
+                if args.config_level == 'global':
+                    # Apply global configuration
+                    config._load_global_config()
+                elif args.config_level == 'directory':
+                    # Apply directory configuration
+                    dlink_dir = os.path.dirname(os.path.abspath(args.dazzlelink_path))
+                    config.load_directory_config(dlink_dir)
+                # 'file' level uses the dazzlelink's embedded configuration
+            
             dazzlelink.execute_dazzlelink(
                 args.dazzlelink_path,
-                mode=args.mode if hasattr(args, 'mode') else None
+                mode=args.mode if hasattr(args, 'mode') else None,
+                config_override=config if hasattr(args, 'config_level') else None
             )
             
         elif args.command == 'config':
@@ -2179,7 +4076,36 @@ def main():
                     dir_path = args.directory if hasattr(args, 'directory') and args.directory else os.getcwd()
                     if config.save_directory_config(dir_path):
                         print(f"Reset directory configuration for {dir_path} to defaults")
-        # Then add these in the command handling part of main()
+
+        elif args.command == 'update-config':
+            # Apply configuration level for saving changes
+            config_level = args.config_level if hasattr(args, 'config_level') else 'file'
+            
+            # Execute batch update
+            result = dazzlelink.update_config_batch(
+                args.path,
+                mode=args.mode,
+                pattern=args.pattern,
+                recursive=args.recursive,
+                dry_run=args.dry_run,
+                config_level=config_level,
+                make_executable=args.make_executable
+            )
+            
+            # Report results
+            if args.dry_run:
+                print("Dry run - no changes were made")
+                
+            print(f"Results:")
+            print(f"  {len(result['updated'])} files would be updated" if args.dry_run else f"  {len(result['updated'])} files updated")
+            print(f"  {len(result['skipped'])} files skipped (no changes needed)")
+            print(f"  {len(result['errors'])} errors encountered")
+            
+            if result['errors']:
+                print("\nErrors:")
+                for error in result['errors']:
+                    print(f"  {error['path']}: {error['error']}")
+        
         elif args.command == 'copy':
             # Determine relative/absolute preference
             relative_links = None

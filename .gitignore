@@ -30,7 +30,7 @@ coverage.*
 .cache/
 nosetests.xml
 *.cover
-*.py,cover
+#*.py,cover
 .hypothesis/
 
 # MyPy and type-checking
@@ -74,6 +74,3 @@ desktop.ini
 # Task scheduler
 *.xml
 task_*.json
-
-# Reddit-specific
-*.reddit-slack-state.json
