@@ -155,7 +155,7 @@ Dazzlelink began as a tool for preserving symbolic links across platforms, but i
 
 ### 🔍 Content Relationship Discovery
 
-Future versions aim to integrate with content similarity tools (like the companion tool "find-best-images") to identify and map relationships between files based on content similarity rather than just explicit links.
+Future versions aim to integrate with content similarity tools (like the companion tool "[find-best-images](https://github.com/djdarcy/find-best-images)") to identify and map relationships between files based on content similarity rather than just explicit links.
 
 ### 📊 File System Visualization
 
