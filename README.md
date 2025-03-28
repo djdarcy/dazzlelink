@@ -167,11 +167,11 @@ Future versions aim to integrate with content similarity tools (like the compani
 
 The roadmap includes tools to visualize your file system as a graph of interconnected nodes, where relationships between files and directories become apparent regardless of their hierarchical location.
 
-### 🕸️ Project Collections
+### 🔄 Project Collections
 
 Building toward a future where "project collections" can be dynamically defined by selecting nodes in a relationship graph, allowing for fluid organization based on actual content relationships rather than rigid folder structures.
 
-### 🧩 OmniTools Integration
+### 🔄 OmniTools Integration
 
 Dazzlelink is part of [Dazzle's](https://github.com/djdarcy/dazzle) OmniTools suite of Python utilities designed to provide consistent functionality across all operating systems, simplifying system administration and file management tasks.
 
