@@ -168,7 +168,7 @@ Building toward a future where "project collections" can be dynamically defined 
 
 ### 🔄 OmniTools Integration
 
-Dazzlelink is part of a planned OmniTools suite of Python utilities designed to provide consistent functionality across all operating systems, simplifying system administration and file management tasks.
+Dazzlelink is part of [Dazzle's](https://github.com/djdarcy/dazzle) OmniTools suite of Python utilities designed to provide consistent functionality across all operating systems, simplifying system administration and file management tasks.
 
 ## Contributing
 
