@@ -1,13 +1,13 @@
+![GitHub Workflow Status](https://github.com/djdarcy/dazzlelink/actions/workflows/python.yml/badge.svg)
+![Version](https://img.shields.io/badge/version-0.5.0--alpha-blue)
+![Python Version](https://img.shields.io/badge/python-%3E%3D3.8-brightgreen)
+![License](https://img.shields.io/badge/license-GPL--3.0-blue)
+
 # Dazzlelink
 
 > Preserve, manage, and understand symbolic links across different operating systems and environments.
 
 Dazzlelink is a cross-platform tool that exports, imports, and manages symbolic links, with a particular focus on handling network paths and preserving links across different systems. It solves the common challenge of maintaining and backing-up symbolic links when moving between Windows, Linux, macOS, and BSD environments.
-
-![GitHub Workflow Status](https://github.com/djdarcy/dazzlelink/actions/workflows/python.yml/badge.svg)
-![Version](https://img.shields.io/badge/version-0.5.0--alpha-blue)
-![Python Version](https://img.shields.io/badge/python-%3E%3D3.8-brightgreen)
-![License](https://img.shields.io/badge/license-GPL--3.0-blue)
 
 ![Dazzlelink example workflow](examples/workflow.png)
 
