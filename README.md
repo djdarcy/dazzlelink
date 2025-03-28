@@ -62,7 +62,8 @@ pip install -e .
 # Export a single symlink to a .dazzlelink file
 dazzlelink export path/to/symlink
 
-# Export all symlinks in a directory to .dazzlelink files, that open using the default handler, and remove the original symlink
+# Export all symlinks in a directory to .dazzlelink files, that open using the default handler,
+# and remove the original symlink
 dazzlelink.py convert --remove-originals --mode open --config-level file .
 ```
 
