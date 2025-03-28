@@ -1,0 +1,79 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Cython and compiled modules
+*.so
+
+# Virtual environments
+venv/
+.env/
+.venv/
+ENV/
+env.bak/
+env/
+
+# pip environment + dependencies
+Pipfile.lock
+poetry.lock
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Testing / coverage
+.pytest_cache/
+.tox/
+coverage.*
+.cache/
+nosetests.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# MyPy and type-checking
+.mypy_cache/
+.dmypy.json
+.pyre/
+
+# Logs and temp
+logs/
+*.log
+*.tmp
+*.bak
+*.swp
+*backup*
+revisions/
+data/
+temp/
+.temp/
+
+# Secrets
+.env
+credentials.json
+*credentials*.json
+*token*.json
+*auth*.json
+config.json
+*-config.json
+
+# Editor directories and project files
+.idea/
+.vscode/
+*.code-workspace
+*.sublime-*
+.history/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Task scheduler
+*.xml
+task_*.json
+
+# Reddit-specific
+*.reddit-slack-state.json

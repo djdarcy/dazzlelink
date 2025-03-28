@@ -1,0 +1,42 @@
+version: 2
+updates:
+  # Enable version updates for Python
+  - package-ecosystem: "pip"
+    # Look for Python requirements in the root directory
+    directory: "/"
+    # Check for updates once a week
+    schedule:
+      interval: "weekly"
+    # Allow up to 10 open pull requests for pip dependencies
+    open-pull-requests-limit: 10
+    # Set custom labels
+    labels:
+      - "pip"
+      - "dependencies"
+    # Target version requirements
+    versioning-strategy: increase-if-necessary
+    # Assign someone to review
+    # assignees:
+    #  - "dustinjd"
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    # Set custom labels
+    labels:
+      - "github-actions"
+      - "dependencies"
+    # Allow up to 5 open pull requests for GitHub Actions
+    open-pull-requests-limit: 5
+
+  # Optional: If you have any subpackages or test directories with their own requirements
+  # - package-ecosystem: "pip"
+  #   directory: "/tests"
+  #   schedule:
+  #     interval: "weekly"
+  #   labels:
+  #     - "pip"
+  #     - "dependencies"
+  #     - "testing"
