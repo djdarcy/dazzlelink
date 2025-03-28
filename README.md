@@ -4,6 +4,11 @@
 
 Dazzlelink is a cross-platform tool that exports, imports, and manages symbolic links, with a particular focus on handling network paths and preserving links across different systems. It solves the common challenge of maintaining and backing-up symbolic links when moving between Windows, Linux, macOS, and BSD environments.
 
+![GitHub Workflow Status](https://github.com/djdarcy/dazzlelink/actions/workflows/python.yml/badge.svg)
+![Version](https://img.shields.io/badge/version-0.5.0--alpha-blue)
+![Python Version](https://img.shields.io/badge/python-%3E%3D3.8-brightgreen)
+![License](https://img.shields.io/badge/license-GPL--3.0-blue)
+
 ![Dazzlelink example workflow](examples/workflow.png)
 
 ## Features
@@ -162,11 +167,11 @@ Future versions aim to integrate with content similarity tools (like the compani
 
 The roadmap includes tools to visualize your file system as a graph of interconnected nodes, where relationships between files and directories become apparent regardless of their hierarchical location.
 
-### 🔄 Project Collections
+### 🕸️ Project Collections
 
 Building toward a future where "project collections" can be dynamically defined by selecting nodes in a relationship graph, allowing for fluid organization based on actual content relationships rather than rigid folder structures.
 
-### 🔄 OmniTools Integration
+### 🧩 OmniTools Integration
 
 Dazzlelink is part of [Dazzle's](https://github.com/djdarcy/dazzle) OmniTools suite of Python utilities designed to provide consistent functionality across all operating systems, simplifying system administration and file management tasks.
 
