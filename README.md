@@ -196,7 +196,7 @@ Dazzlelink metadata serves as a foundational building block of the larger Relink
 Dazzlelink can also be used as a Python library in your own applications:
 
 ```
-pythonCopyfrom dazzlelink import DazzleLink, DazzleLinkConfig
+python from dazzlelink import DazzleLink, DazzleLinkConfig
 
 # Create a configuration
 config = DazzleLinkConfig()
