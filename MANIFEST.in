@@ -1,0 +1,13 @@
+include LICENSE
+include README.md
+include CHANGELOG.md
+include CONTRIBUTING.md
+include SECURITY.md
+include pyproject.toml
+
+recursive-include docs *
+recursive-include examples *
+recursive-include scripts *
+recursive-include tests *
+
+global-exclude *.py[cod] __pycache__ *.so *.dylib .DS_Store

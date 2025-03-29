@@ -4,7 +4,7 @@ Thank you for considering contributing to **Dazzlelink**, the symbolic link pres
 
 ## Code of Conduct
 
-By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md) to foster a respectful and inclusive environment.
+By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md) to foster a respectful environment.
 
 ## How You Can Contribute
 

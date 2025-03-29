@@ -59,6 +59,16 @@ cd dazzlelink
 pip install -e .
 ```
 
+On Windows:
+```cmd
+pip install -e ".[windows]"
+```
+
+Other potential dependencies down the line:
+```bash
+pip install -e ".[dev,test,docs]"
+```
+
 ## Quick Start
 
 ### Export a symbolic link
@@ -93,6 +103,8 @@ dazzlelink mirror /source/directory /destination/directory
 ```
 
 ## Command Reference
+
+The full command reference is available in [`docs/COMMAND_REFERENCE.md`](https://github.com/djdarcy/dazzlelink/blob/main/docs/COMMAND_REFERENCE.md)
 
 | Command | Description |
 |---------|-------------|
@@ -178,6 +190,52 @@ Dazzlelink is part of [Dazzle's](https://github.com/djdarcy/dazzle) OmniTools su
 ### 🌐 Relinker Ecosystem Integration
 
 Dazzlelink metadata serves as a foundational building block of the larger Relinker ecosystem—a decentralized, content-aware archival and link-resolution system designed to combat digital link rot and enable intelligent, persistent content linking. The protocol aims to better manage complex link graph relations, metadata similarity, and provide resilient content preservation. For a detailed exploration of the broader vision and its future roadmap, visit the [Relinker Project Overview](https://github.com/djdarcy/dazzlelink/blob/main/docs/RELINKER.md).
+
+## Library Usage
+
+Dazzlelink can also be used as a Python library in your own applications:
+
+```
+pythonCopyfrom dazzlelink import DazzleLink, DazzleLinkConfig
+
+# Create a configuration
+config = DazzleLinkConfig()
+
+# Create a DazzleLink instance
+dazzle = DazzleLink(config)
+
+# Export a symlink to a dazzlelink file
+dazzle_path = dazzle.serialize_link("/path/to/symlink", make_executable=True)
+
+# Import a dazzlelink file
+from dazzlelink import recreate_link
+new_link = recreate_link("/path/to/file.dazzlelink", timestamp_strategy="target")
+
+# Batch operations
+from dazzlelink.operations import batch_import, convert_directory
+convert_directory("/path/to/dir", recursive=True)
+```
+
+## Module Structure
+
+Dazzlelink has a modular architecture:
+
+- `dazzlelink.cli`: Command-line interface and argument parsing
+
+- `dazzlelink.config`: Configuration management
+
+- `dazzlelink.data`: Data handling for dazzlelink files
+
+- `dazzlelink.path`: Path handling and UNC path conversion
+
+- `dazzlelink.operations`: Core operations for working with symlinks
+  - `operations.core`: Main DazzleLink class
+  - `operations.links`: Symlink creation and management
+  - `operations.batch`: Batch processing of multiple links
+  - `operations.timestamps`: Timestamp preservation
+  - `operations.recreate`: Symlink recreation from dazzlelinks
+
+This modular design allows for better extensibility and enables using specific components in other projects.
 
 ## Contributing
 
